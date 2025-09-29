@@ -62,21 +62,27 @@ INEWSPRO/
 
 ### **.env File**
 ```env
-# Database
-SUPABASE_URL=http://127.0.0.1:54321
-SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
-SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+# Server Configuration
+PORT=3333
+HOST=your.server.ip
 
-# CasparCG
-CASPAR_HOST=100.74.188.128
+# Database (Supabase)
+SUPABASE_URL=your_supabase_url
+SUPABASE_ANON_KEY=your_anon_key
+SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
+
+# CasparCG Server
+CASPAR_HOST=caspar_server_ip
 CASPAR_PORT=5250
 
-# FTP Upload
-FTP_HOST=100.74.188.128
-FTP_USER=casparcg
-FTP_PASSWORD=casparcg
+# FTP Upload Configuration
+FTP_HOST=ftp_server_ip
+FTP_USER=your_ftp_user
+FTP_PASSWORD=your_ftp_password
 FTP_SECURE=true
 ```
+
+> **⚠️ Importante**: Crea il tuo file `.env` basandoti su `.env.example` e inserisci le tue credenziali reali.
 
 ### **FileZilla Server (Windows CasparCG)**
 1. Install FileZilla Server
