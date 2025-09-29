@@ -1,0 +1,1028 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>iNEWS - Archivio</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+    <style>
+        :root {
+            --primary: #0066CC;
+            --accent: #FF0040;
+            --success: #00C851;
+            --warning: #FFB300;
+            --danger: #DC3545;
+            --bg-main: #0A0C0F;
+            --bg-panel: #141821;
+            --bg-card: #1C2028;
+            --bg-hover: #252A35;
+            --bg-selected: #2A3142;
+            --border: #2A2E3A;
+            --text-primary: #FFFFFF;
+            --text-secondary: #B4BAC6;
+            --text-muted: #6C7485;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg-main);
+            color: var(--text-primary);
+            height: 100vh;
+            display: flex;
+            overflow: hidden;
+        }
+
+        /* Left Sidebar - Archive Navigation */
+        .archive-sidebar {
+            width: 280px;
+            background: var(--bg-panel);
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .sidebar-header {
+            padding: 16px;
+            background: var(--bg-card);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .archive-search {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+
+        .search-input {
+            flex: 1;
+            padding: 8px 12px;
+            background: var(--bg-main);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            color: var(--text-primary);
+            font-size: 13px;
+        }
+
+        .search-btn {
+            padding: 8px 12px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .date-filters {
+            display: flex;
+            gap: 8px;
+        }
+
+        .date-input {
+            flex: 1;
+            padding: 6px 8px;
+            background: var(--bg-main);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            color: var(--text-primary);
+            font-size: 12px;
+        }
+
+        .archive-nav {
+            flex: 1;
+            overflow-y: auto;
+            padding: 8px;
+        }
+
+        .nav-section {
+            margin-bottom: 16px;
+        }
+
+        .nav-title {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            margin-bottom: 8px;
+            padding: 0 12px;
+        }
+
+        .nav-item {
+            padding: 8px 12px;
+            margin-bottom: 2px;
+            cursor: pointer;
+            border-radius: 6px;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 13px;
+        }
+
+        .nav-item:hover {
+            background: var(--bg-hover);
+        }
+
+        .nav-item.active {
+            background: var(--bg-selected);
+            color: var(--primary);
+        }
+
+        .nav-icon {
+            width: 16px;
+            text-align: center;
+        }
+
+        .nav-count {
+            margin-left: auto;
+            background: var(--bg-card);
+            padding: 2px 6px;
+            border-radius: 8px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        /* Main Content */
+        .archive-main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .main-header {
+            padding: 20px;
+            background: var(--bg-panel);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header-left {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+        }
+
+        .archive-title {
+            font-size: 20px;
+            font-weight: 700;
+        }
+
+        .archive-stats {
+            display: flex;
+            gap: 16px;
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+
+        .stat-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 12px;
+        }
+
+        .btn {
+            padding: 8px 16px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .btn.secondary {
+            background: var(--bg-hover);
+            color: var(--text-primary);
+        }
+
+        /* Content Area */
+        .content-area {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+        }
+
+        .content-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 16px;
+        }
+
+        .archive-item {
+            background: var(--bg-panel);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 16px;
+            cursor: pointer;
+            transition: all 0.2s;
+            position: relative;
+        }
+
+        .archive-item:hover {
+            border-color: var(--primary);
+            transform: translateY(-2px);
+        }
+
+        .item-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: start;
+            margin-bottom: 12px;
+        }
+
+        .item-type {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        .type-rundown {
+            background: var(--primary);
+            color: white;
+        }
+
+        .type-story {
+            background: var(--success);
+            color: white;
+        }
+
+        .type-media {
+            background: var(--warning);
+            color: white;
+        }
+
+        .type-template {
+            background: #9C27B0;
+            color: white;
+        }
+
+        .item-date {
+            font-size: 11px;
+            color: var(--text-muted);
+            font-family: 'Roboto Mono', monospace;
+        }
+
+        .item-title {
+            font-size: 14px;
+            font-weight: 700;
+            margin-bottom: 8px;
+            line-height: 1.3;
+        }
+
+        .item-description {
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-bottom: 12px;
+            line-height: 1.4;
+        }
+
+        .item-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 11px;
+            color: var(--text-muted);
+        }
+
+        .meta-left {
+            display: flex;
+            gap: 12px;
+        }
+
+        .meta-item {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .item-actions {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            display: flex;
+            gap: 4px;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+
+        .archive-item:hover .item-actions {
+            opacity: 1;
+        }
+
+        .action-btn {
+            width: 28px;
+            height: 28px;
+            background: rgba(0,0,0,0.8);
+            border: none;
+            border-radius: 4px;
+            color: white;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            transition: all 0.2s;
+        }
+
+        .action-btn:hover {
+            background: var(--primary);
+        }
+
+        /* Timeline View */
+        .timeline-view {
+            display: none;
+        }
+
+        .timeline-view.active {
+            display: block;
+        }
+
+        .timeline {
+            position: relative;
+            padding-left: 40px;
+        }
+
+        .timeline::before {
+            content: '';
+            position: absolute;
+            left: 20px;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: var(--border);
+        }
+
+        .timeline-item {
+            position: relative;
+            margin-bottom: 24px;
+            background: var(--bg-panel);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 16px;
+            margin-left: 20px;
+        }
+
+        .timeline-item::before {
+            content: '';
+            position: absolute;
+            left: -31px;
+            top: 20px;
+            width: 12px;
+            height: 12px;
+            background: var(--primary);
+            border-radius: 50%;
+            border: 3px solid var(--bg-main);
+        }
+
+        .timeline-date {
+            position: absolute;
+            left: -120px;
+            top: 16px;
+            font-size: 12px;
+            color: var(--text-muted);
+            font-family: 'Roboto Mono', monospace;
+        }
+
+        /* Filters */
+        .filters-bar {
+            padding: 16px 20px;
+            background: var(--bg-card);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            gap: 16px;
+            align-items: center;
+        }
+
+        .filter-group {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .filter-label {
+            font-size: 12px;
+            color: var(--text-muted);
+            font-weight: 600;
+        }
+
+        .filter-select {
+            padding: 6px 10px;
+            background: var(--bg-main);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            color: var(--text-primary);
+            font-size: 12px;
+        }
+
+        .view-toggle {
+            margin-left: auto;
+            display: flex;
+            background: var(--bg-main);
+            border-radius: 6px;
+            overflow: hidden;
+            border: 1px solid var(--border);
+        }
+
+        .view-btn {
+            padding: 8px 12px;
+            background: transparent;
+            border: none;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .view-btn.active {
+            background: var(--primary);
+            color: white;
+        }
+
+        /* Tags */
+        .tags-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-top: 8px;
+        }
+
+        .tag {
+            padding: 2px 6px;
+            background: var(--bg-card);
+            border-radius: 8px;
+            font-size: 10px;
+            color: var(--text-muted);
+        }
+
+        /* Statistics Widget */
+        .stats-widget {
+            background: var(--bg-panel);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .stats-title {
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 16px;
+        }
+
+        .stat-box {
+            text-align: center;
+            padding: 12px;
+            background: var(--bg-card);
+            border-radius: 8px;
+        }
+
+        .stat-number {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--primary);
+            font-family: 'Roboto Mono', monospace;
+        }
+
+        .stat-label {
+            font-size: 11px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            margin-top: 4px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Archive Sidebar -->
+    <div class="archive-sidebar">
+        <div class="sidebar-header">
+            <div class="archive-search">
+                <input type="text" class="search-input" placeholder="Cerca nell'archivio...">
+                <button class="search-btn">
+                    <i class="fas fa-search"></i>
+                </button>
+            </div>
+            <div class="date-filters">
+                <input type="date" class="date-input" value="2024-01-01">
+                <input type="date" class="date-input" value="2024-01-27">
+            </div>
+        </div>
+
+        <div class="archive-nav">
+            <!-- Quick Access -->
+            <div class="nav-section">
+                <div class="nav-title">Accesso Rapido</div>
+                <div class="nav-item active">
+                    <i class="fas fa-clock nav-icon"></i>
+                    <span>Recenti</span>
+                    <span class="nav-count">47</span>
+                </div>
+                <div class="nav-item">
+                    <i class="fas fa-star nav-icon"></i>
+                    <span>Preferiti</span>
+                    <span class="nav-count">12</span>
+                </div>
+                <div class="nav-item">
+                    <i class="fas fa-fire nav-icon"></i>
+                    <span>Breaking News</span>
+                    <span class="nav-count">8</span>
+                </div>
+            </div>
+
+            <!-- By Type -->
+            <div class="nav-section">
+                <div class="nav-title">Per Tipo</div>
+                <div class="nav-item">
+                    <i class="fas fa-list nav-icon"></i>
+                    <span>Rundown</span>
+                    <span class="nav-count">156</span>
+                </div>
+                <div class="nav-item">
+                    <i class="fas fa-newspaper nav-icon"></i>
+                    <span>Storie</span>
+                    <span class="nav-count">1,247</span>
+                </div>
+                <div class="nav-item">
+                    <i class="fas fa-photo-video nav-icon"></i>
+                    <span>Media</span>
+                    <span class="nav-count">3,892</span>
+                </div>
+                <div class="nav-item">
+                    <i class="fas fa-palette nav-icon"></i>
+                    <span>Template</span>
+                    <span class="nav-count">89</span>
+                </div>
+            </div>
+
+            <!-- By Date -->
+            <div class="nav-section">
+                <div class="nav-title">Per Periodo</div>
+                <div class="nav-item">
+                    <i class="fas fa-calendar nav-icon"></i>
+                    <span>Oggi</span>
+                    <span class="nav-count">23</span>
+                </div>
+                <div class="nav-item">
+                    <i class="fas fa-calendar-week nav-icon"></i>
+                    <span>Questa settimana</span>
+                    <span class="nav-count">98</span>
+                </div>
+                <div class="nav-item">
+                    <i class="fas fa-calendar-alt nav-icon"></i>
+                    <span>Questo mese</span>
+                    <span class="nav-count">342</span>
+                </div>
+                <div class="nav-item">
+                    <i class="fas fa-calendar-times nav-icon"></i>
+                    <span>Anno scorso</span>
+                    <span class="nav-count">4,567</span>
+                </div>
+            </div>
+
+            <!-- By Show -->
+            <div class="nav-section">
+                <div class="nav-title">Per Programma</div>
+                <div class="nav-item">
+                    <i class="fas fa-tv nav-icon"></i>
+                    <span>TG delle 20:00</span>
+                    <span class="nav-count">1,892</span>
+                </div>
+                <div class="nav-item">
+                    <i class="fas fa-tv nav-icon"></i>
+                    <span>TG delle 13:00</span>
+                    <span class="nav-count">1,567</span>
+                </div>
+                <div class="nav-item">
+                    <i class="fas fa-tv nav-icon"></i>
+                    <span>Speciali</span>
+                    <span class="nav-count">234</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="archive-main">
+        <div class="main-header">
+            <div class="header-left">
+                <h1 class="archive-title">Archivio - Recenti</h1>
+                <div class="archive-stats">
+                    <div class="stat-item">
+                        <i class="fas fa-database"></i>
+                        <span>5,432 elementi</span>
+                    </div>
+                    <div class="stat-item">
+                        <i class="fas fa-hdd"></i>
+                        <span>89.2 GB</span>
+                    </div>
+                    <div class="stat-item">
+                        <i class="fas fa-clock"></i>
+                        <span>Ultimo backup: 1h fa</span>
+                    </div>
+                </div>
+            </div>
+            <div class="header-actions">
+                <button class="btn secondary">
+                    <i class="fas fa-download"></i>
+                    Esporta
+                </button>
+                <button class="btn secondary">
+                    <i class="fas fa-upload"></i>
+                    Importa
+                </button>
+                <button class="btn">
+                    <i class="fas fa-plus"></i>
+                    Nuovo Archivio
+                </button>
+            </div>
+        </div>
+
+        <!-- Filters -->
+        <div class="filters-bar">
+            <div class="filter-group">
+                <span class="filter-label">Tipo:</span>
+                <select class="filter-select">
+                    <option>Tutti</option>
+                    <option>Rundown</option>
+                    <option>Storie</option>
+                    <option>Media</option>
+                    <option>Template</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <span class="filter-label">Stato:</span>
+                <select class="filter-select">
+                    <option>Tutti</option>
+                    <option>Completati</option>
+                    <option>Bozze</option>
+                    <option>Archiviati</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <span class="filter-label">Autore:</span>
+                <select class="filter-select">
+                    <option>Tutti</option>
+                    <option>Mario Rossi</option>
+                    <option>Laura Bianchi</option>
+                    <option>Giuseppe Verdi</option>
+                </select>
+            </div>
+            <div class="view-toggle">
+                <button class="view-btn active" onclick="switchView('grid')">
+                    <i class="fas fa-th"></i>
+                </button>
+                <button class="view-btn" onclick="switchView('timeline')">
+                    <i class="fas fa-stream"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Content Area -->
+        <div class="content-area">
+            <!-- Statistics Widget -->
+            <div class="stats-widget">
+                <div class="stats-title">
+                    <i class="fas fa-chart-bar"></i>
+                    Statistiche Archivio
+                </div>
+                <div class="stats-grid">
+                    <div class="stat-box">
+                        <div class="stat-number">47</div>
+                        <div class="stat-label">Oggi</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-number">342</div>
+                        <div class="stat-label">Questo mese</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-number">1.2k</div>
+                        <div class="stat-label">Quest'anno</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-number">5.4k</div>
+                        <div class="stat-label">Totale</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Grid View -->
+            <div class="content-grid" id="grid-view">
+                <!-- Rundown Item -->
+                <div class="archive-item">
+                    <div class="item-header">
+                        <div class="item-type type-rundown">Rundown</div>
+                        <div class="item-date">27/01/2024 20:00</div>
+                    </div>
+                    <div class="item-title">TG delle 20:00 - 27 Gennaio 2024</div>
+                    <div class="item-description">Rundown completo del telegiornale serale con 24 storie. Durata totale: 30 minuti. Include breaking news terremoto Milano.</div>
+                    <div class="item-meta">
+                        <div class="meta-left">
+                            <div class="meta-item">
+                                <i class="fas fa-user"></i>
+                                <span>Mario Rossi</span>
+                            </div>
+                            <div class="meta-item">
+                                <i class="fas fa-clock"></i>
+                                <span>30:00</span>
+                            </div>
+                            <div class="meta-item">
+                                <i class="fas fa-list"></i>
+                                <span>24 items</span>
+                            </div>
+                        </div>
+                        <div class="meta-item">
+                            <i class="fas fa-eye"></i>
+                            <span>127 views</span>
+                        </div>
+                    </div>
+                    <div class="tags-container">
+                        <div class="tag">breaking</div>
+                        <div class="tag">terremoto</div>
+                        <div class="tag">serale</div>
+                    </div>
+                    <div class="item-actions">
+                        <button class="action-btn">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                        <button class="action-btn">
+                            <i class="fas fa-download"></i>
+                        </button>
+                        <button class="action-btn">
+                            <i class="fas fa-star"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Story Item -->
+                <div class="archive-item">
+                    <div class="item-header">
+                        <div class="item-type type-story">Storia</div>
+                        <div class="item-date">27/01/2024 14:30</div>
+                    </div>
+                    <div class="item-title">Terremoto magnitudo 4.2 a Milano</div>
+                    <div class="item-description">Package completo sul terremoto che ha colpito Milano questa mattina. Include interviste, immagini dal luogo e dati tecnici dall'INGV.</div>
+                    <div class="item-meta">
+                        <div class="meta-left">
+                            <div class="meta-item">
+                                <i class="fas fa-user"></i>
+                                <span>Laura Bianchi</span>
+                            </div>
+                            <div class="meta-item">
+                                <i class="fas fa-clock"></i>
+                                <span>02:30</span>
+                            </div>
+                            <div class="meta-item">
+                                <i class="fas fa-video"></i>
+                                <span>PKG</span>
+                            </div>
+                        </div>
+                        <div class="meta-item">
+                            <i class="fas fa-eye"></i>
+                            <span>89 views</span>
+                        </div>
+                    </div>
+                    <div class="tags-container">
+                        <div class="tag">breaking</div>
+                        <div class="tag">milano</div>
+                        <div class="tag">emergenza</div>
+                    </div>
+                    <div class="item-actions">
+                        <button class="action-btn">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                        <button class="action-btn">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button class="action-btn">
+                            <i class="fas fa-star"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Media Item -->
+                <div class="archive-item">
+                    <div class="item-header">
+                        <div class="item-type type-media">Media</div>
+                        <div class="item-date">27/01/2024 13:45</div>
+                    </div>
+                    <div class="item-title">PKG_TERREMOTO_MILANO_V2.mp4</div>
+                    <div class="item-description">Video package del servizio sul terremoto di Milano. Montaggio finale approvato per messa in onda. Include SOT del sindaco e immagini esclusivo.</div>
+                    <div class="item-meta">
+                        <div class="meta-left">
+                            <div class="meta-item">
+                                <i class="fas fa-user"></i>
+                                <span>Giuseppe Verdi</span>
+                            </div>
+                            <div class="meta-item">
+                                <i class="fas fa-clock"></i>
+                                <span>02:30</span>
+                            </div>
+                            <div class="meta-item">
+                                <i class="fas fa-hdd"></i>
+                                <span>450 MB</span>
+                            </div>
+                        </div>
+                        <div class="meta-item">
+                            <i class="fas fa-download"></i>
+                            <span>23 download</span>
+                        </div>
+                    </div>
+                    <div class="tags-container">
+                        <div class="tag">video</div>
+                        <div class="tag">h264</div>
+                        <div class="tag">1080p</div>
+                    </div>
+                    <div class="item-actions">
+                        <button class="action-btn">
+                            <i class="fas fa-play"></i>
+                        </button>
+                        <button class="action-btn">
+                            <i class="fas fa-download"></i>
+                        </button>
+                        <button class="action-btn">
+                            <i class="fas fa-star"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Template Item -->
+                <div class="archive-item">
+                    <div class="item-header">
+                        <div class="item-type type-template">Template</div>
+                        <div class="item-date">26/01/2024 16:20</div>
+                    </div>
+                    <div class="item-title">Lower Third Breaking News</div>
+                    <div class="item-description">Template grafico per breaking news con animazione dinamica. Utilizzato per le notizie urgenti del TG. Compatible SPX-GC v2.1.</div>
+                    <div class="item-meta">
+                        <div class="meta-left">
+                            <div class="meta-item">
+                                <i class="fas fa-user"></i>
+                                <span>Anna Russo</span>
+                            </div>
+                            <div class="meta-item">
+                                <i class="fas fa-palette"></i>
+                                <span>SPX-GC</span>
+                            </div>
+                            <div class="meta-item">
+                                <i class="fas fa-code"></i>
+                                <span>v2.1</span>
+                            </div>
+                        </div>
+                        <div class="meta-item">
+                            <i class="fas fa-tv"></i>
+                            <span>45 usi</span>
+                        </div>
+                    </div>
+                    <div class="tags-container">
+                        <div class="tag">grafica</div>
+                        <div class="tag">breaking</div>
+                        <div class="tag">animato</div>
+                    </div>
+                    <div class="item-actions">
+                        <button class="action-btn">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                        <button class="action-btn">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button class="action-btn">
+                            <i class="fas fa-star"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- More items would continue here -->
+            </div>
+
+            <!-- Timeline View -->
+            <div class="timeline-view" id="timeline-view">
+                <div class="timeline">
+                    <div class="timeline-item">
+                        <div class="timeline-date">20:00</div>
+                        <div class="item-type type-rundown">Rundown</div>
+                        <div class="item-title">TG delle 20:00 - Completato</div>
+                        <div class="item-description">Rundown trasmesso con successo. 30 minuti di durata, 24 storie.</div>
+                    </div>
+
+                    <div class="timeline-item">
+                        <div class="timeline-date">14:30</div>
+                        <div class="item-type type-story">Storia</div>
+                        <div class="item-title">Terremoto Milano - Storia Creata</div>
+                        <div class="item-description">Nuova storia breaking news creata e approvata per messa in onda.</div>
+                    </div>
+
+                    <div class="timeline-item">
+                        <div class="timeline-date">13:45</div>
+                        <div class="item-type type-media">Media</div>
+                        <div class="item-title">Video Package - Upload Completato</div>
+                        <div class="item-description">Upload del video package terremoto Milano completato e processato.</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Navigation
+        document.querySelectorAll('.nav-item').forEach(item => {
+            item.addEventListener('click', function() {
+                document.querySelectorAll('.nav-item').forEach(nav => {
+                    nav.classList.remove('active');
+                });
+                this.classList.add('active');
+
+                const title = this.querySelector('span').textContent;
+                document.querySelector('.archive-title').textContent = `Archivio - ${title}`;
+            });
+        });
+
+        // View toggle
+        function switchView(view) {
+            const gridView = document.getElementById('grid-view');
+            const timelineView = document.getElementById('timeline-view');
+            const buttons = document.querySelectorAll('.view-btn');
+
+            buttons.forEach(btn => btn.classList.remove('active'));
+
+            if (view === 'grid') {
+                gridView.style.display = 'grid';
+                timelineView.classList.remove('active');
+                buttons[0].classList.add('active');
+            } else {
+                gridView.style.display = 'none';
+                timelineView.classList.add('active');
+                buttons[1].classList.add('active');
+            }
+        }
+
+        // Archive item actions
+        document.querySelectorAll('.action-btn').forEach(btn => {
+            btn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                const action = this.querySelector('i').className;
+                console.log('Archive action:', action);
+            });
+        });
+
+        // Archive item click
+        document.querySelectorAll('.archive-item').forEach(item => {
+            item.addEventListener('click', function() {
+                const title = this.querySelector('.item-title').textContent;
+                console.log('Selected archive item:', title);
+            });
+        });
+
+        // Filters
+        document.querySelectorAll('.filter-select').forEach(select => {
+            select.addEventListener('change', function() {
+                console.log('Filter changed:', this.value);
+            });
+        });
+
+        // Search
+        document.querySelector('.search-btn').addEventListener('click', function() {
+            const query = document.querySelector('.search-input').value;
+            console.log('Search:', query);
+        });
+
+        // Date filters
+        document.querySelectorAll('.date-input').forEach(input => {
+            input.addEventListener('change', function() {
+                console.log('Date filter changed:', this.value);
+            });
+        });
+
+        console.log('Archive loaded successfully');
+    </script>
+</body>
+</html>

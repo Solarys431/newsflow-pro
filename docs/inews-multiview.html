@@ -1,0 +1,911 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>iNEWS - Multiview Professional</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+    <style>
+        :root {
+            --primary: #0066CC;
+            --accent: #FF0040;
+            --success: #00C851;
+            --warning: #FFB300;
+            --danger: #DC3545;
+            --bg-main: #0A0C0F;
+            --bg-panel: #141821;
+            --bg-card: #1C2028;
+            --bg-hover: #252A35;
+            --bg-selected: #2A3142;
+            --border: #2A2E3A;
+            --text-primary: #FFFFFF;
+            --text-secondary: #B4BAC6;
+            --text-muted: #6C7485;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg-main);
+            color: var(--text-primary);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* Header */
+        .multiview-header {
+            padding: 16px 20px;
+            background: var(--bg-panel);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .layout-selector {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .layout-btn {
+            padding: 8px 12px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            color: var(--text-secondary);
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 600;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .layout-btn.active {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+
+        .layout-btn:hover:not(.active) {
+            background: var(--bg-hover);
+            color: var(--text-primary);
+        }
+
+        .multiview-controls {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+
+        .status-display {
+            display: flex;
+            gap: 16px;
+            align-items: center;
+            font-size: 12px;
+        }
+
+        .status-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .status-led {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        .status-led.on-air {
+            background: var(--accent);
+        }
+
+        .status-led.preview {
+            background: var(--success);
+        }
+
+        .status-led.recording {
+            background: var(--warning);
+        }
+
+        .btn {
+            padding: 8px 16px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        /* Main Multiview */
+        .multiview-container {
+            flex: 1;
+            display: flex;
+            overflow: hidden;
+        }
+
+        .multiview-grid {
+            flex: 1;
+            background: #000;
+            padding: 4px;
+            display: grid;
+            gap: 4px;
+            position: relative;
+        }
+
+        /* Layout Grids */
+        .layout-2x2 {
+            grid-template-columns: 1fr 1fr;
+            grid-template-rows: 1fr 1fr;
+        }
+
+        .layout-1plus5 {
+            grid-template-columns: 2fr 1fr;
+            grid-template-rows: 2fr 1fr 1fr 1fr;
+        }
+
+        .layout-1plus7 {
+            grid-template-columns: 3fr 1fr 1fr;
+            grid-template-rows: 2fr 1fr 1fr 1fr;
+        }
+
+        .layout-quad {
+            grid-template-columns: 1fr 1fr 1fr 1fr;
+            grid-template-rows: 1fr 1fr 1fr;
+        }
+
+        /* Video Windows */
+        .video-window {
+            background: var(--bg-panel);
+            border: 2px solid transparent;
+            position: relative;
+            overflow: hidden;
+            cursor: pointer;
+            transition: all 0.2s;
+            min-height: 120px;
+        }
+
+        .video-window:hover {
+            border-color: var(--primary);
+        }
+
+        .video-window.on-air {
+            border-color: var(--accent);
+            box-shadow: 0 0 12px rgba(255, 0, 64, 0.3);
+        }
+
+        .video-window.preview {
+            border-color: var(--success);
+            box-shadow: 0 0 12px rgba(0, 200, 81, 0.3);
+        }
+
+        .video-content {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(45deg, #1a1a1a 25%, transparent 25%),
+                        linear-gradient(-45deg, #1a1a1a 25%, transparent 25%),
+                        linear-gradient(45deg, transparent 75%, #1a1a1a 75%),
+                        linear-gradient(-45deg, transparent 75%, #1a1a1a 75%);
+            background-size: 20px 20px;
+            background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
+        }
+
+        .video-placeholder {
+            text-align: center;
+            color: var(--text-muted);
+        }
+
+        .video-overlay {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: linear-gradient(transparent, rgba(0,0,0,0.9));
+            padding: 12px 8px 8px;
+            color: white;
+        }
+
+        .video-label {
+            font-size: 12px;
+            font-weight: 700;
+            margin-bottom: 2px;
+        }
+
+        .video-info {
+            font-size: 10px;
+            opacity: 0.8;
+        }
+
+        .tally-light {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            border: 2px solid white;
+            display: none;
+        }
+
+        .tally-light.on-air {
+            background: var(--accent);
+            display: block;
+            animation: pulse 1s infinite;
+        }
+
+        .tally-light.preview {
+            background: var(--success);
+            display: block;
+        }
+
+        /* Audio Meters */
+        .audio-meter {
+            position: absolute;
+            left: 4px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 8px;
+            height: 80%;
+            background: rgba(0,0,0,0.7);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .meter-fill {
+            width: 100%;
+            background: linear-gradient(to top,
+                var(--success) 0%,
+                var(--success) 60%,
+                var(--warning) 80%,
+                var(--danger) 100%
+            );
+            height: 0%;
+            transition: height 0.1s;
+            position: absolute;
+            bottom: 0;
+        }
+
+        /* Grid Lines */
+        .grid-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            pointer-events: none;
+            background-image:
+                linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px);
+            background-size: 40px 40px;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .show-grid .grid-overlay {
+            opacity: 1;
+        }
+
+        /* Side Panel */
+        .side-panel {
+            width: 300px;
+            background: var(--bg-panel);
+            border-left: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .panel-section {
+            border-bottom: 1px solid var(--border);
+        }
+
+        .panel-header {
+            padding: 12px 16px;
+            background: var(--bg-card);
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            color: var(--text-secondary);
+        }
+
+        .panel-content {
+            padding: 16px;
+        }
+
+        /* Source List */
+        .source-list {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .source-item {
+            padding: 8px 12px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            margin-bottom: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .source-item:hover {
+            background: var(--bg-hover);
+        }
+
+        .source-item.active {
+            border-color: var(--primary);
+            background: var(--bg-selected);
+        }
+
+        .source-name {
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .source-type {
+            font-size: 11px;
+            color: var(--text-muted);
+        }
+
+        .source-status {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--success);
+        }
+
+        /* Settings */
+        .setting-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .setting-label {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        .toggle {
+            width: 40px;
+            height: 20px;
+            background: var(--bg-card);
+            border-radius: 10px;
+            position: relative;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .toggle.active {
+            background: var(--primary);
+        }
+
+        .toggle-handle {
+            width: 16px;
+            height: 16px;
+            background: white;
+            border-radius: 50%;
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            transition: left 0.3s;
+        }
+
+        .toggle.active .toggle-handle {
+            left: 22px;
+        }
+
+        .range-slider {
+            width: 100%;
+            margin: 8px 0;
+        }
+
+        .slider {
+            width: 100%;
+            height: 4px;
+            border-radius: 2px;
+            background: var(--bg-card);
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        .slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: var(--primary);
+            cursor: pointer;
+        }
+
+        /* Presets */
+        .preset-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+        }
+
+        .preset-btn {
+            padding: 8px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            color: var(--text-secondary);
+            cursor: pointer;
+            font-size: 11px;
+            text-align: center;
+            transition: all 0.2s;
+        }
+
+        .preset-btn:hover {
+            background: var(--bg-hover);
+            color: var(--text-primary);
+        }
+
+        /* Clock */
+        .time-display {
+            text-align: center;
+            padding: 16px;
+            background: var(--bg-card);
+            border-radius: 8px;
+            margin-bottom: 16px;
+        }
+
+        .main-time {
+            font-size: 24px;
+            font-weight: 700;
+            font-family: 'Roboto Mono', monospace;
+            color: var(--primary);
+        }
+
+        .time-label {
+            font-size: 10px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            margin-top: 4px;
+        }
+
+        /* Waveform */
+        .waveform {
+            height: 60px;
+            background: var(--bg-card);
+            border-radius: 4px;
+            position: relative;
+            overflow: hidden;
+            margin-top: 8px;
+        }
+
+        .waveform-bars {
+            display: flex;
+            align-items: end;
+            height: 100%;
+            padding: 4px;
+            gap: 1px;
+        }
+
+        .waveform-bar {
+            flex: 1;
+            background: var(--primary);
+            opacity: 0.6;
+            transition: height 0.1s;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <div class="multiview-header">
+        <div class="layout-selector">
+            <span style="font-size: 14px; font-weight: 600; margin-right: 16px;">Layout:</span>
+            <button class="layout-btn active" onclick="setLayout('2x2')">
+                <i class="fas fa-th"></i>
+                2x2
+            </button>
+            <button class="layout-btn" onclick="setLayout('1plus5')">
+                <i class="fas fa-th-large"></i>
+                1+5
+            </button>
+            <button class="layout-btn" onclick="setLayout('1plus7')">
+                <i class="fas fa-grip-horizontal"></i>
+                1+7
+            </button>
+            <button class="layout-btn" onclick="setLayout('quad')">
+                <i class="fas fa-border-all"></i>
+                Quad
+            </button>
+        </div>
+
+        <div class="multiview-controls">
+            <div class="status-display">
+                <div class="status-item">
+                    <div class="status-led on-air"></div>
+                    <span>ON AIR</span>
+                </div>
+                <div class="status-item">
+                    <div class="status-led preview"></div>
+                    <span>PREVIEW</span>
+                </div>
+                <div class="status-item">
+                    <div class="status-led recording"></div>
+                    <span>REC</span>
+                </div>
+            </div>
+            <button class="btn" onclick="toggleGrid()">
+                <i class="fas fa-grid-3x3"></i>
+                Grid
+            </button>
+            <button class="btn" onclick="takeSnapshot()">
+                <i class="fas fa-camera"></i>
+                Snapshot
+            </button>
+        </div>
+    </div>
+
+    <!-- Main Container -->
+    <div class="multiview-container">
+        <!-- Multiview Grid -->
+        <div class="multiview-grid layout-2x2" id="multiview-grid">
+            <!-- Main Program -->
+            <div class="video-window on-air" data-source="program">
+                <div class="video-content">
+                    <div class="video-placeholder">
+                        <i class="fas fa-video" style="font-size: 48px; margin-bottom: 12px;"></i>
+                        <div style="font-size: 16px;">PROGRAM</div>
+                        <div style="font-size: 12px; margin-top: 4px;">PKG_TERREMOTO_MILANO</div>
+                    </div>
+                </div>
+                <div class="video-overlay">
+                    <div class="video-label">PROGRAM</div>
+                    <div class="video-info">Ch1 • 1920x1080 • 25fps</div>
+                </div>
+                <div class="tally-light on-air"></div>
+                <div class="audio-meter">
+                    <div class="meter-fill" style="height: 75%;"></div>
+                </div>
+            </div>
+
+            <!-- Preview -->
+            <div class="video-window preview" data-source="preview">
+                <div class="video-content">
+                    <div class="video-placeholder">
+                        <i class="fas fa-eye" style="font-size: 48px; margin-bottom: 12px;"></i>
+                        <div style="font-size: 16px;">PREVIEW</div>
+                        <div style="font-size: 12px; margin-top: 4px;">INTERVISTA_SINDACO</div>
+                    </div>
+                </div>
+                <div class="video-overlay">
+                    <div class="video-label">PREVIEW</div>
+                    <div class="video-info">Ch2 • 1920x1080 • 25fps</div>
+                </div>
+                <div class="tally-light preview"></div>
+                <div class="audio-meter">
+                    <div class="meter-fill" style="height: 45%;"></div>
+                </div>
+            </div>
+
+            <!-- Camera 1 -->
+            <div class="video-window" data-source="cam1">
+                <div class="video-content">
+                    <div class="video-placeholder">
+                        <i class="fas fa-video" style="font-size: 32px; margin-bottom: 8px;"></i>
+                        <div style="font-size: 14px;">CAM 1</div>
+                        <div style="font-size: 10px; margin-top: 4px;">Studio Wide</div>
+                    </div>
+                </div>
+                <div class="video-overlay">
+                    <div class="video-label">CAMERA 1</div>
+                    <div class="video-info">Studio Wide • Ready</div>
+                </div>
+                <div class="audio-meter">
+                    <div class="meter-fill" style="height: 20%;"></div>
+                </div>
+            </div>
+
+            <!-- Camera 2 -->
+            <div class="video-window" data-source="cam2">
+                <div class="video-content">
+                    <div class="video-placeholder">
+                        <i class="fas fa-video" style="font-size: 32px; margin-bottom: 8px;"></i>
+                        <div style="font-size: 14px;">CAM 2</div>
+                        <div style="font-size: 10px; margin-top: 4px;">Desk Close</div>
+                    </div>
+                </div>
+                <div class="video-overlay">
+                    <div class="video-label">CAMERA 2</div>
+                    <div class="video-info">Desk Close • Ready</div>
+                </div>
+                <div class="audio-meter">
+                    <div class="meter-fill" style="height: 35%;"></div>
+                </div>
+            </div>
+
+            <div class="grid-overlay"></div>
+        </div>
+
+        <!-- Side Panel -->
+        <div class="side-panel">
+            <!-- Sources -->
+            <div class="panel-section">
+                <div class="panel-header">Video Sources</div>
+                <div class="panel-content">
+                    <div class="source-list">
+                        <div class="source-item active">
+                            <div>
+                                <div class="source-name">Camera 1</div>
+                                <div class="source-type">Studio Wide</div>
+                            </div>
+                            <div class="source-status"></div>
+                        </div>
+                        <div class="source-item">
+                            <div>
+                                <div class="source-name">Camera 2</div>
+                                <div class="source-type">Desk Close</div>
+                            </div>
+                            <div class="source-status"></div>
+                        </div>
+                        <div class="source-item">
+                            <div>
+                                <div class="source-name">Camera 3</div>
+                                <div class="source-type">Guest</div>
+                            </div>
+                            <div class="source-status"></div>
+                        </div>
+                        <div class="source-item">
+                            <div>
+                                <div class="source-name">VTR 1</div>
+                                <div class="source-type">Playout Server</div>
+                            </div>
+                            <div class="source-status"></div>
+                        </div>
+                        <div class="source-item">
+                            <div>
+                                <div class="source-name">Live Feed</div>
+                                <div class="source-type">Remote</div>
+                            </div>
+                            <div class="source-status"></div>
+                        </div>
+                        <div class="source-item">
+                            <div>
+                                <div class="source-name">Graphics</div>
+                                <div class="source-type">CasparCG</div>
+                            </div>
+                            <div class="source-status"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Clock -->
+            <div class="panel-section">
+                <div class="panel-header">Time</div>
+                <div class="panel-content">
+                    <div class="time-display">
+                        <div class="main-time" id="current-time">15:24:37</div>
+                        <div class="time-label">Current Time</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Audio Levels -->
+            <div class="panel-section">
+                <div class="panel-header">Audio Levels</div>
+                <div class="panel-content">
+                    <div style="margin-bottom: 12px;">
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+                            <span style="font-size: 11px;">Program L</span>
+                            <span style="font-size: 11px;">-12 dB</span>
+                        </div>
+                        <div class="waveform">
+                            <div class="waveform-bars" id="audio-program-l"></div>
+                        </div>
+                    </div>
+                    <div style="margin-bottom: 12px;">
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+                            <span style="font-size: 11px;">Program R</span>
+                            <span style="font-size: 11px;">-14 dB</span>
+                        </div>
+                        <div class="waveform">
+                            <div class="waveform-bars" id="audio-program-r"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Settings -->
+            <div class="panel-section">
+                <div class="panel-header">Display Settings</div>
+                <div class="panel-content">
+                    <div class="setting-row">
+                        <span class="setting-label">Show Audio Meters</span>
+                        <div class="toggle active">
+                            <div class="toggle-handle"></div>
+                        </div>
+                    </div>
+                    <div class="setting-row">
+                        <span class="setting-label">Show Tally Lights</span>
+                        <div class="toggle active">
+                            <div class="toggle-handle"></div>
+                        </div>
+                    </div>
+                    <div class="setting-row">
+                        <span class="setting-label">Show Labels</span>
+                        <div class="toggle active">
+                            <div class="toggle-handle"></div>
+                        </div>
+                    </div>
+                    <div class="setting-row">
+                        <span class="setting-label">Safe Area</span>
+                        <div class="toggle">
+                            <div class="toggle-handle"></div>
+                        </div>
+                    </div>
+
+                    <div style="margin-top: 20px;">
+                        <div class="setting-label" style="margin-bottom: 8px;">Border Width</div>
+                        <div class="range-slider">
+                            <input type="range" min="1" max="10" value="2" class="slider">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Presets -->
+            <div class="panel-section">
+                <div class="panel-header">Layout Presets</div>
+                <div class="panel-content">
+                    <div class="preset-grid">
+                        <button class="preset-btn">Save Preset 1</button>
+                        <button class="preset-btn">Save Preset 2</button>
+                        <button class="preset-btn">Load Preset 1</button>
+                        <button class="preset-btn">Load Preset 2</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Layout switching
+        function setLayout(layout) {
+            const grid = document.getElementById('multiview-grid');
+            const buttons = document.querySelectorAll('.layout-btn');
+
+            // Update button states
+            buttons.forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+
+            // Change grid layout
+            grid.className = `multiview-grid layout-${layout}`;
+
+            console.log('Layout changed to:', layout);
+        }
+
+        // Grid toggle
+        function toggleGrid() {
+            const grid = document.getElementById('multiview-grid');
+            grid.classList.toggle('show-grid');
+        }
+
+        // Snapshot
+        function takeSnapshot() {
+            console.log('Taking multiview snapshot...');
+            // In real implementation, capture current multiview frame
+        }
+
+        // Window selection
+        document.querySelectorAll('.video-window').forEach(window => {
+            window.addEventListener('click', function() {
+                const source = this.dataset.source;
+                console.log('Selected source:', source);
+
+                // Update source list selection
+                document.querySelectorAll('.source-item').forEach(item => {
+                    item.classList.remove('active');
+                });
+            });
+        });
+
+        // Source list
+        document.querySelectorAll('.source-item').forEach(item => {
+            item.addEventListener('click', function() {
+                document.querySelectorAll('.source-item').forEach(i => {
+                    i.classList.remove('active');
+                });
+                this.classList.add('active');
+
+                const sourceName = this.querySelector('.source-name').textContent;
+                console.log('Source selected:', sourceName);
+            });
+        });
+
+        // Toggle switches
+        document.querySelectorAll('.toggle').forEach(toggle => {
+            toggle.addEventListener('click', function() {
+                this.classList.toggle('active');
+            });
+        });
+
+        // Clock update
+        function updateClock() {
+            const now = new Date();
+            const timeString = now.toTimeString().split(' ')[0];
+            document.getElementById('current-time').textContent = timeString;
+        }
+
+        setInterval(updateClock, 1000);
+
+        // Audio level simulation
+        function updateAudioLevels() {
+            const audioElements = ['audio-program-l', 'audio-program-r'];
+
+            audioElements.forEach(elementId => {
+                const container = document.getElementById(elementId);
+                if (!container) return;
+
+                // Clear existing bars
+                container.innerHTML = '';
+
+                // Create bars
+                for (let i = 0; i < 50; i++) {
+                    const bar = document.createElement('div');
+                    bar.className = 'waveform-bar';
+
+                    // Simulate audio level
+                    const level = Math.random() * 60 + 20; // 20-80%
+                    bar.style.height = level + '%';
+
+                    container.appendChild(bar);
+                }
+            });
+        }
+
+        // Update audio levels every 100ms
+        setInterval(updateAudioLevels, 100);
+
+        // Audio meter animation
+        function animateAudioMeters() {
+            document.querySelectorAll('.meter-fill').forEach(meter => {
+                const baseLevel = parseInt(meter.style.height);
+                const variation = (Math.random() - 0.5) * 20;
+                const newLevel = Math.max(0, Math.min(100, baseLevel + variation));
+                meter.style.height = newLevel + '%';
+            });
+        }
+
+        setInterval(animateAudioMeters, 200);
+
+        // Initialize audio waveforms
+        updateAudioLevels();
+
+        console.log('Multiview Professional loaded successfully');
+    </script>
+</body>
+</html>

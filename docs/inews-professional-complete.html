@@ -1,0 +1,1463 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>iNEWS Professional 2025 - Complete Newsroom System</title>
+
+    <!-- Fonts & Icons -->
+    <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+    <style>
+        :root {
+            /* Professional Broadcast Colors */
+            --primary: #0066CC;
+            --primary-light: #4A90E2;
+            --primary-dark: #004499;
+            --accent: #FF0040;
+            --accent-orange: #FF6B35;
+            --success: #00C851;
+            --warning: #FFB300;
+            --danger: #DC3545;
+            --info: #17A2B8;
+
+            /* Dark Theme */
+            --bg-main: #0A0C0F;
+            --bg-panel: #141821;
+            --bg-card: #1C2028;
+            --bg-hover: #252A35;
+            --bg-selected: #2A3142;
+            --border: #2A2E3A;
+            --border-light: #353A48;
+
+            /* Text Colors */
+            --text-primary: #FFFFFF;
+            --text-secondary: #B4BAC6;
+            --text-muted: #6C7485;
+            --text-disabled: #4A5161;
+
+            /* Media Type Colors */
+            --video-color: #4A90E2;
+            --audio-color: #00BFA5;
+            --graphic-color: #FFB300;
+            --live-color: #FF0040;
+            --package-color: #9C27B0;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg-main);
+            color: var(--text-primary);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            user-select: none;
+        }
+
+        /* HEADER BAR */
+        .header {
+            height: 48px;
+            background: linear-gradient(to bottom, #1F2937 0%, #111827 100%);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 16px;
+            z-index: 1000;
+        }
+
+        .header-logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-weight: 800;
+            font-size: 16px;
+            letter-spacing: -0.5px;
+        }
+
+        .header-logo .logo-icon {
+            width: 32px;
+            height: 32px;
+            background: linear-gradient(135deg, var(--accent) 0%, var(--primary) 100%);
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 900;
+            font-size: 14px;
+        }
+
+        .header-center {
+            display: flex;
+            gap: 24px;
+            align-items: center;
+        }
+
+        .show-selector {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 12px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        .on-air-timer {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 12px;
+            background: var(--accent);
+            color: white;
+            border-radius: 6px;
+            font-weight: 600;
+            font-size: 14px;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.8; }
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 16px;
+            align-items: center;
+        }
+
+        /* TOOLBAR */
+        .toolbar {
+            height: 40px;
+            background: var(--bg-panel);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            padding: 0 16px;
+            gap: 16px;
+        }
+
+        .toolbar-group {
+            display: flex;
+            gap: 4px;
+            align-items: center;
+            padding-right: 16px;
+            border-right: 1px solid var(--border);
+        }
+
+        .toolbar-group:last-child {
+            border-right: none;
+        }
+
+        .toolbar-btn {
+            padding: 4px 8px;
+            background: transparent;
+            border: 1px solid transparent;
+            border-radius: 4px;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 12px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .toolbar-btn:hover {
+            background: var(--bg-hover);
+            color: var(--text-primary);
+            border-color: var(--border-light);
+        }
+
+        .toolbar-btn.active {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+
+        /* MAIN LAYOUT */
+        .main-container {
+            flex: 1;
+            display: flex;
+            overflow: hidden;
+        }
+
+        /* RUNDOWN PANEL */
+        .rundown-panel {
+            width: 480px;
+            background: var(--bg-panel);
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .rundown-header {
+            padding: 12px 16px;
+            background: var(--bg-card);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .rundown-title {
+            font-weight: 700;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .rundown-stats {
+            display: flex;
+            gap: 16px;
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        .rundown-stat {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .rundown-stat-value {
+            color: var(--text-primary);
+            font-weight: 600;
+        }
+
+        /* RUNDOWN TABLE */
+        .rundown-table {
+            flex: 1;
+            overflow-y: auto;
+            font-size: 13px;
+        }
+
+        .rundown-table table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .rundown-table th {
+            position: sticky;
+            top: 0;
+            background: var(--bg-card);
+            border-bottom: 2px solid var(--border);
+            padding: 8px;
+            text-align: left;
+            font-weight: 600;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-muted);
+            z-index: 10;
+        }
+
+        .rundown-table td {
+            padding: 6px 8px;
+            border-bottom: 1px solid var(--border);
+            vertical-align: middle;
+        }
+
+        .rundown-row {
+            transition: background 0.2s;
+            cursor: pointer;
+        }
+
+        .rundown-row:hover {
+            background: var(--bg-hover);
+        }
+
+        .rundown-row.selected {
+            background: var(--bg-selected);
+            border-left: 3px solid var(--primary);
+        }
+
+        .rundown-row.on-air {
+            background: rgba(255, 0, 64, 0.1);
+            animation: onAirPulse 2s infinite;
+        }
+
+        @keyframes onAirPulse {
+            0%, 100% { background: rgba(255, 0, 64, 0.1); }
+            50% { background: rgba(255, 0, 64, 0.2); }
+        }
+
+        /* Story Types */
+        .story-type {
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            display: inline-block;
+            min-width: 50px;
+            text-align: center;
+        }
+
+        .story-type.rdr { background: var(--text-muted); color: white; }
+        .story-type.vo { background: var(--video-color); color: white; }
+        .story-type.sot { background: var(--audio-color); color: white; }
+        .story-type.pkg { background: var(--package-color); color: white; }
+        .story-type.live { background: var(--live-color); color: white; }
+        .story-type.gfx { background: var(--graphic-color); color: black; }
+        .story-type.break { background: var(--bg-hover); color: var(--text-secondary); }
+
+        /* Media Indicators */
+        .media-icons {
+            display: flex;
+            gap: 4px;
+            align-items: center;
+        }
+
+        .media-icon {
+            width: 20px;
+            height: 20px;
+            border-radius: 3px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            color: white;
+        }
+
+        .media-icon.video { background: var(--video-color); }
+        .media-icon.audio { background: var(--audio-color); }
+        .media-icon.graphic { background: var(--graphic-color); }
+        .media-icon.ready { background: var(--success); }
+        .media-icon.missing { background: var(--danger); }
+
+        /* Duration Display */
+        .duration {
+            font-family: 'Roboto Mono', monospace;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-secondary);
+        }
+
+        .duration.over { color: var(--danger); }
+        .duration.under { color: var(--warning); }
+
+        /* SCRIPT EDITOR */
+        .script-panel {
+            flex: 1;
+            background: var(--bg-panel);
+            display: flex;
+            flex-direction: column;
+            border-right: 1px solid var(--border);
+        }
+
+        .script-header {
+            padding: 12px 16px;
+            background: var(--bg-card);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .script-meta {
+            display: flex;
+            gap: 16px;
+            align-items: center;
+            font-size: 13px;
+        }
+
+        .script-meta-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .script-meta-label {
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+
+        .script-meta-value {
+            color: var(--text-primary);
+            font-weight: 600;
+        }
+
+        /* Script Editor Area */
+        .script-editor {
+            flex: 1;
+            display: flex;
+        }
+
+        .script-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .script-teleprompter {
+            flex: 1;
+            padding: 16px;
+            background: var(--bg-main);
+            margin: 8px;
+            border-radius: 6px;
+            border: 1px solid var(--border);
+            overflow-y: auto;
+        }
+
+        .teleprompter-line {
+            margin-bottom: 12px;
+            line-height: 1.6;
+        }
+
+        .teleprompter-direction {
+            background: var(--bg-card);
+            color: var(--text-muted);
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            margin-bottom: 8px;
+            display: inline-block;
+        }
+
+        .teleprompter-text {
+            font-size: 15px;
+            color: var(--text-primary);
+            user-select: text;
+        }
+
+        .teleprompter-sot {
+            background: var(--bg-card);
+            border-left: 3px solid var(--audio-color);
+            padding: 12px;
+            margin: 12px 0;
+            border-radius: 4px;
+        }
+
+        .sot-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .sot-title {
+            font-weight: 600;
+            color: var(--audio-color);
+            font-size: 12px;
+            text-transform: uppercase;
+        }
+
+        .sot-duration {
+            font-family: 'Roboto Mono', monospace;
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        .sot-name {
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .sot-title-text {
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+
+        /* MEDIA SIDEBAR */
+        .media-sidebar {
+            width: 320px;
+            background: var(--bg-card);
+            padding: 16px;
+            border-left: 1px solid var(--border);
+            overflow-y: auto;
+        }
+
+        .media-section {
+            margin-bottom: 24px;
+        }
+
+        .media-section-title {
+            font-size: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-muted);
+            margin-bottom: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .media-add-btn {
+            padding: 2px 8px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 3px;
+            font-size: 10px;
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+
+        .media-add-btn:hover {
+            opacity: 0.8;
+        }
+
+        .media-item {
+            background: var(--bg-panel);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 10px;
+            margin-bottom: 8px;
+            cursor: move;
+            transition: all 0.2s;
+        }
+
+        .media-item:hover {
+            border-color: var(--primary);
+            transform: translateX(-2px);
+            box-shadow: 2px 2px 8px rgba(0,0,0,0.3);
+        }
+
+        .media-item.dragging {
+            opacity: 0.5;
+        }
+
+        .media-item-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 6px;
+        }
+
+        .media-item-type {
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 10px;
+            font-weight: 600;
+            text-transform: uppercase;
+            color: white;
+        }
+
+        .media-item-type.video { background: var(--video-color); }
+        .media-item-type.audio { background: var(--audio-color); }
+        .media-item-type.graphic { background: var(--graphic-color); }
+
+        .media-item-duration {
+            font-family: 'Roboto Mono', monospace;
+            font-size: 11px;
+            color: var(--text-muted);
+        }
+
+        .media-item-name {
+            font-weight: 600;
+            font-size: 13px;
+            margin-bottom: 4px;
+        }
+
+        .media-item-info {
+            font-size: 11px;
+            color: var(--text-secondary);
+        }
+
+        /* PREVIEW PANEL */
+        .preview-panel {
+            width: 400px;
+            background: var(--bg-panel);
+            border-left: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .preview-monitor {
+            aspect-ratio: 16/9;
+            background: black;
+            position: relative;
+            margin: 16px;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.5);
+        }
+
+        .preview-video {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+
+        .preview-overlay {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            padding: 16px;
+            background: linear-gradient(to top, rgba(0,0,0,0.9) 0%, transparent 100%);
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .preview-graphic {
+            background: linear-gradient(135deg, rgba(20,20,30,0.95) 0%, rgba(30,30,45,0.95) 100%);
+            border-top: 3px solid var(--accent);
+            padding: 12px;
+            border-radius: 4px;
+            backdrop-filter: blur(10px);
+        }
+
+        .preview-breaking {
+            background: var(--accent);
+            color: white;
+            padding: 4px 8px;
+            display: inline-block;
+            font-weight: 800;
+            font-size: 11px;
+            margin-bottom: 8px;
+            border-radius: 3px;
+        }
+
+        .preview-headline {
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+
+        .preview-subtitle {
+            font-size: 13px;
+            color: rgba(255,255,255,0.8);
+        }
+
+        .preview-controls {
+            padding: 16px;
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+        }
+
+        .preview-btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 6px;
+            font-weight: 600;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .preview-btn.play {
+            background: var(--success);
+            color: white;
+        }
+
+        .preview-btn.stop {
+            background: var(--danger);
+            color: white;
+        }
+
+        .preview-btn.cue {
+            background: var(--warning);
+            color: black;
+        }
+
+        /* DEVICE STATUS */
+        .device-status {
+            padding: 16px;
+            border-top: 1px solid var(--border);
+            background: var(--bg-card);
+        }
+
+        .device-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        .device-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 12px;
+        }
+
+        .device-indicator {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--success);
+        }
+
+        .device-indicator.offline {
+            background: var(--text-disabled);
+        }
+
+        .device-indicator.error {
+            background: var(--danger);
+        }
+
+        /* STATUS BAR */
+        .status-bar {
+            height: 28px;
+            background: var(--bg-card);
+            border-top: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            padding: 0 16px;
+            font-size: 11px;
+            color: var(--text-muted);
+        }
+
+        .status-section {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 0 16px;
+            border-right: 1px solid var(--border);
+        }
+
+        .status-section:last-child {
+            border-right: none;
+            margin-left: auto;
+        }
+
+        .status-label {
+            font-weight: 600;
+        }
+
+        .status-value {
+            color: var(--text-primary);
+        }
+
+        .status-indicator {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--success);
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 10px;
+            height: 10px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--bg-main);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--border-light);
+            border-radius: 5px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--text-disabled);
+        }
+
+        /* Drag and Drop */
+        .drop-zone {
+            border: 2px dashed var(--primary);
+            background: rgba(74, 144, 226, 0.1);
+            border-radius: 6px;
+            min-height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--primary);
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .drag-over {
+            background: rgba(74, 144, 226, 0.2);
+        }
+    </style>
+</head>
+<body>
+    <!-- HEADER -->
+    <header class="header">
+        <div class="header-logo">
+            <div class="logo-icon">iN</div>
+            <span>iNEWS Professional 2025</span>
+        </div>
+
+        <div class="header-center">
+            <div class="show-selector">
+                <i class="fas fa-tv"></i>
+                <span>TG delle 20:00</span>
+                <i class="fas fa-chevron-down"></i>
+            </div>
+
+            <div class="on-air-timer">
+                <span style="font-size: 10px;">ON AIR</span>
+                <span id="timer">00:12:45</span>
+            </div>
+        </div>
+
+        <div class="header-actions">
+            <span style="font-size: 13px; color: var(--text-muted);">Mario Rossi</span>
+            <button class="toolbar-btn">
+                <i class="fas fa-bell"></i>
+            </button>
+            <button class="toolbar-btn">
+                <i class="fas fa-cog"></i>
+            </button>
+        </div>
+    </header>
+
+    <!-- TOOLBAR -->
+    <div class="toolbar">
+        <div class="toolbar-group">
+            <button class="toolbar-btn">
+                <i class="fas fa-file-plus"></i>
+                New Story
+            </button>
+            <button class="toolbar-btn">
+                <i class="fas fa-save"></i>
+                Save
+            </button>
+            <button class="toolbar-btn">
+                <i class="fas fa-folder-open"></i>
+                Open
+            </button>
+        </div>
+
+        <div class="toolbar-group">
+            <button class="toolbar-btn">
+                <i class="fas fa-cut"></i>
+            </button>
+            <button class="toolbar-btn">
+                <i class="fas fa-copy"></i>
+            </button>
+            <button class="toolbar-btn">
+                <i class="fas fa-paste"></i>
+            </button>
+        </div>
+
+        <div class="toolbar-group">
+            <button class="toolbar-btn active">
+                <i class="fas fa-list"></i>
+                Rundown
+            </button>
+            <button class="toolbar-btn">
+                <i class="fas fa-edit"></i>
+                Script
+            </button>
+            <button class="toolbar-btn">
+                <i class="fas fa-video"></i>
+                Media
+            </button>
+        </div>
+
+        <div class="toolbar-group">
+            <button class="toolbar-btn">
+                <i class="fas fa-search"></i>
+                Search
+            </button>
+            <button class="toolbar-btn">
+                <i class="fas fa-clock"></i>
+                Archive
+            </button>
+        </div>
+    </div>
+
+    <!-- MAIN CONTAINER -->
+    <div class="main-container">
+        <!-- RUNDOWN PANEL -->
+        <div class="rundown-panel">
+            <div class="rundown-header">
+                <div class="rundown-title">
+                    <i class="fas fa-list"></i>
+                    Rundown
+                </div>
+                <div class="rundown-stats">
+                    <div class="rundown-stat">
+                        <span>Total:</span>
+                        <span class="rundown-stat-value">24:32</span>
+                    </div>
+                    <div class="rundown-stat">
+                        <span>Target:</span>
+                        <span class="rundown-stat-value">25:00</span>
+                    </div>
+                    <div class="rundown-stat">
+                        <span>Items:</span>
+                        <span class="rundown-stat-value">18</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="rundown-table">
+                <table>
+                    <thead>
+                        <tr>
+                            <th width="30">#</th>
+                            <th width="50">Type</th>
+                            <th>Slug</th>
+                            <th width="60">Media</th>
+                            <th width="60">Dur</th>
+                            <th width="60">Back</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- OPENING -->
+                        <tr class="rundown-row">
+                            <td>1</td>
+                            <td><span class="story-type gfx">GFX</span></td>
+                            <td><strong>SIGLA APERTURA</strong></td>
+                            <td>
+                                <div class="media-icons">
+                                    <span class="media-icon video" title="Video">V</span>
+                                    <span class="media-icon audio" title="Audio">A</span>
+                                </div>
+                            </td>
+                            <td><span class="duration">0:15</span></td>
+                            <td><span class="duration">0:15</span></td>
+                        </tr>
+
+                        <!-- HEADLINES -->
+                        <tr class="rundown-row">
+                            <td>2</td>
+                            <td><span class="story-type rdr">RDR</span></td>
+                            <td><strong>HEADLINES</strong></td>
+                            <td></td>
+                            <td><span class="duration">0:30</span></td>
+                            <td><span class="duration">0:45</span></td>
+                        </tr>
+
+                        <!-- BREAKING NEWS -->
+                        <tr class="rundown-row selected on-air">
+                            <td>3</td>
+                            <td><span class="story-type live">LIVE</span></td>
+                            <td><strong>TERREMOTO MILANO</strong></td>
+                            <td>
+                                <div class="media-icons">
+                                    <span class="media-icon graphic" title="Graphic">G</span>
+                                    <span class="media-icon ready" title="Ready">✓</span>
+                                </div>
+                            </td>
+                            <td><span class="duration">2:30</span></td>
+                            <td><span class="duration">3:15</span></td>
+                        </tr>
+
+                        <!-- VO -->
+                        <tr class="rundown-row">
+                            <td>4</td>
+                            <td><span class="story-type vo">VO</span></td>
+                            <td><strong>DANNI EPICENTRO</strong></td>
+                            <td>
+                                <div class="media-icons">
+                                    <span class="media-icon video" title="Video">V</span>
+                                    <span class="media-icon ready" title="Ready">✓</span>
+                                </div>
+                            </td>
+                            <td><span class="duration">0:45</span></td>
+                            <td><span class="duration">4:00</span></td>
+                        </tr>
+
+                        <!-- SOT -->
+                        <tr class="rundown-row">
+                            <td>5</td>
+                            <td><span class="story-type sot">SOT</span></td>
+                            <td><strong>INT SINDACO</strong></td>
+                            <td>
+                                <div class="media-icons">
+                                    <span class="media-icon video" title="Video">V</span>
+                                    <span class="media-icon audio" title="Audio">A</span>
+                                </div>
+                            </td>
+                            <td><span class="duration">1:15</span></td>
+                            <td><span class="duration">5:15</span></td>
+                        </tr>
+
+                        <!-- PACKAGE -->
+                        <tr class="rundown-row">
+                            <td>6</td>
+                            <td><span class="story-type pkg">PKG</span></td>
+                            <td><strong>ELEZIONI USA</strong></td>
+                            <td>
+                                <div class="media-icons">
+                                    <span class="media-icon video" title="Video">V</span>
+                                    <span class="media-icon missing" title="Missing">!</span>
+                                </div>
+                            </td>
+                            <td><span class="duration">3:20</span></td>
+                            <td><span class="duration">8:35</span></td>
+                        </tr>
+
+                        <!-- BREAK -->
+                        <tr class="rundown-row">
+                            <td>7</td>
+                            <td><span class="story-type break">BRK</span></td>
+                            <td><strong>--- PUBBLICITÀ ---</strong></td>
+                            <td></td>
+                            <td><span class="duration">4:00</span></td>
+                            <td><span class="duration">12:35</span></td>
+                        </tr>
+
+                        <!-- MORE STORIES -->
+                        <tr class="rundown-row">
+                            <td>8</td>
+                            <td><span class="story-type rdr">RDR</span></td>
+                            <td><strong>ECONOMIA</strong></td>
+                            <td></td>
+                            <td><span class="duration">0:20</span></td>
+                            <td><span class="duration">12:55</span></td>
+                        </tr>
+
+                        <tr class="rundown-row">
+                            <td>9</td>
+                            <td><span class="story-type vo">VO</span></td>
+                            <td><strong>BORSA MILANO</strong></td>
+                            <td>
+                                <div class="media-icons">
+                                    <span class="media-icon video" title="Video">V</span>
+                                    <span class="media-icon graphic" title="Graphic">G</span>
+                                </div>
+                            </td>
+                            <td><span class="duration">1:10</span></td>
+                            <td><span class="duration">14:05</span></td>
+                        </tr>
+
+                        <tr class="rundown-row">
+                            <td>10</td>
+                            <td><span class="story-type pkg">PKG</span></td>
+                            <td><strong>SERIE A</strong></td>
+                            <td>
+                                <div class="media-icons">
+                                    <span class="media-icon video" title="Video">V</span>
+                                    <span class="media-icon ready" title="Ready">✓</span>
+                                </div>
+                            </td>
+                            <td><span class="duration">2:45</span></td>
+                            <td><span class="duration">16:50</span></td>
+                        </tr>
+
+                        <tr class="rundown-row">
+                            <td>11</td>
+                            <td><span class="story-type gfx">GFX</span></td>
+                            <td><strong>METEO</strong></td>
+                            <td>
+                                <div class="media-icons">
+                                    <span class="media-icon graphic" title="Graphic">G</span>
+                                </div>
+                            </td>
+                            <td><span class="duration">1:30</span></td>
+                            <td><span class="duration">18:20</span></td>
+                        </tr>
+
+                        <tr class="rundown-row">
+                            <td>12</td>
+                            <td><span class="story-type gfx">GFX</span></td>
+                            <td><strong>SIGLA CHIUSURA</strong></td>
+                            <td>
+                                <div class="media-icons">
+                                    <span class="media-icon video" title="Video">V</span>
+                                    <span class="media-icon audio" title="Audio">A</span>
+                                </div>
+                            </td>
+                            <td><span class="duration">0:10</span></td>
+                            <td><span class="duration">18:30</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- SCRIPT PANEL -->
+        <div class="script-panel">
+            <div class="script-header">
+                <div class="script-meta">
+                    <div class="script-meta-item">
+                        <span class="script-meta-label">Story:</span>
+                        <span class="script-meta-value">TERREMOTO MILANO</span>
+                    </div>
+                    <div class="script-meta-item">
+                        <span class="script-meta-label">Type:</span>
+                        <span class="story-type live">LIVE</span>
+                    </div>
+                    <div class="script-meta-item">
+                        <span class="script-meta-label">Duration:</span>
+                        <span class="script-meta-value">2:30</span>
+                    </div>
+                    <div class="script-meta-item">
+                        <span class="script-meta-label">Writer:</span>
+                        <span class="script-meta-value">Laura Bianchi</span>
+                    </div>
+                </div>
+                <div>
+                    <button class="toolbar-btn">
+                        <i class="fas fa-check"></i>
+                        Approve
+                    </button>
+                </div>
+            </div>
+
+            <div class="script-editor">
+                <div class="script-content">
+                    <div class="script-teleprompter">
+                        <!-- ON CAM -->
+                        <div class="teleprompter-line">
+                            <div class="teleprompter-direction">ON CAM - STUDIO</div>
+                            <div class="teleprompter-text">
+                                Buonasera e bentornati. Iniziamo con una notizia dell'ultima ora.
+                            </div>
+                        </div>
+
+                        <!-- LIVE SHOT -->
+                        <div class="teleprompter-line">
+                            <div class="teleprompter-direction">LIVE - MILANO</div>
+                            <div class="teleprompter-text">
+                                Una forte scossa di terremoto di magnitudo 4.2 è stata registrata alle 14:30 con epicentro nella zona di San Siro a Milano.
+                            </div>
+                        </div>
+
+                        <!-- VO -->
+                        <div class="teleprompter-line">
+                            <div class="teleprompter-direction">VO - DANNI EPICENTRO (0:45)</div>
+                            <div class="teleprompter-text">
+                                La scossa è stata avvertita distintamente in tutta la città e nell'hinterland milanese.
+                                Secondo i dati dell'Istituto Nazionale di Geofisica e Vulcanologia, l'ipocentro è stato localizzato a una profondità di 10 chilometri.
+                                Le autorità locali hanno immediatamente attivato i protocolli di emergenza.
+                            </div>
+                        </div>
+
+                        <!-- SOT -->
+                        <div class="teleprompter-sot">
+                            <div class="sot-header">
+                                <span class="sot-title">SOT - INTERVISTA</span>
+                                <span class="sot-duration">1:15</span>
+                            </div>
+                            <div class="sot-name">Giuseppe Sala</div>
+                            <div class="sot-title-text">Sindaco di Milano</div>
+                        </div>
+
+                        <!-- TAG -->
+                        <div class="teleprompter-line">
+                            <div class="teleprompter-direction">ON CAM - TAG</div>
+                            <div class="teleprompter-text">
+                                Al momento non si registrano danni significativi a persone o cose, ma i controlli proseguiranno per tutta la notte.
+                                Continueremo a seguire la situazione e vi terremo aggiornati.
+                            </div>
+                        </div>
+
+                        <!-- GRAPHICS -->
+                        <div class="teleprompter-line">
+                            <div class="teleprompter-direction">GFX - BREAKING NEWS LOWER THIRD</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- MEDIA SIDEBAR -->
+                <div class="media-sidebar">
+                    <!-- VIDEO CLIPS -->
+                    <div class="media-section">
+                        <div class="media-section-title">
+                            VIDEO CLIPS
+                            <button class="media-add-btn">+ ADD</button>
+                        </div>
+
+                        <div class="media-item" draggable="true">
+                            <div class="media-item-header">
+                                <span class="media-item-type video">VIDEO</span>
+                                <span class="media-item-duration">0:45</span>
+                            </div>
+                            <div class="media-item-name">DANNI_EPICENTRO_01</div>
+                            <div class="media-item-info">1920x1080 • 25fps • ProRes</div>
+                        </div>
+
+                        <div class="media-item" draggable="true">
+                            <div class="media-item-header">
+                                <span class="media-item-type video">VIDEO</span>
+                                <span class="media-item-duration">1:30</span>
+                            </div>
+                            <div class="media-item-name">EVACUAZIONE_SCUOLE</div>
+                            <div class="media-item-info">1920x1080 • 25fps • H.264</div>
+                        </div>
+                    </div>
+
+                    <!-- AUDIO CLIPS -->
+                    <div class="media-section">
+                        <div class="media-section-title">
+                            AUDIO / SOT
+                            <button class="media-add-btn">+ ADD</button>
+                        </div>
+
+                        <div class="media-item" draggable="true">
+                            <div class="media-item-header">
+                                <span class="media-item-type audio">AUDIO</span>
+                                <span class="media-item-duration">1:15</span>
+                            </div>
+                            <div class="media-item-name">INT_SINDACO_SALA</div>
+                            <div class="media-item-info">48kHz • Stereo • WAV</div>
+                        </div>
+
+                        <div class="media-item" draggable="true">
+                            <div class="media-item-header">
+                                <span class="media-item-type audio">AUDIO</span>
+                                <span class="media-item-duration">0:45</span>
+                            </div>
+                            <div class="media-item-name">TESTIMONE_01</div>
+                            <div class="media-item-info">48kHz • Mono • MP3</div>
+                        </div>
+                    </div>
+
+                    <!-- GRAPHICS -->
+                    <div class="media-section">
+                        <div class="media-section-title">
+                            GRAPHICS
+                            <button class="media-add-btn">+ ADD</button>
+                        </div>
+
+                        <div class="media-item" draggable="true">
+                            <div class="media-item-header">
+                                <span class="media-item-type graphic">GFX</span>
+                                <span class="media-item-duration">--:--</span>
+                            </div>
+                            <div class="media-item-name">BREAKING_NEWS_L3</div>
+                            <div class="media-item-info">Lower Third • CasparCG</div>
+                        </div>
+
+                        <div class="media-item" draggable="true">
+                            <div class="media-item-header">
+                                <span class="media-item-type graphic">GFX</span>
+                                <span class="media-item-duration">--:--</span>
+                            </div>
+                            <div class="media-item-name">MAPPA_EPICENTRO</div>
+                            <div class="media-item-info">Full Screen • Animated</div>
+                        </div>
+
+                        <div class="media-item" draggable="true">
+                            <div class="media-item-header">
+                                <span class="media-item-type graphic">GFX</span>
+                                <span class="media-item-duration">--:--</span>
+                            </div>
+                            <div class="media-item-name">DATI_SISMICI</div>
+                            <div class="media-item-info">Side Panel • Data Viz</div>
+                        </div>
+                    </div>
+
+                    <!-- DROP ZONE -->
+                    <div class="drop-zone" id="dropZone">
+                        <i class="fas fa-cloud-upload-alt"></i>
+                        Drop media files here
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- PREVIEW PANEL -->
+        <div class="preview-panel">
+            <div class="preview-monitor">
+                <video class="preview-video" id="previewVideo" poster="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1920 1080'%3E%3Crect fill='%23000' width='1920' height='1080'/%3E%3Ctext x='50%25' y='50%25' text-anchor='middle' fill='%23444' font-size='48' font-family='sans-serif'%3EProgramma Output%3C/text%3E%3C/svg%3E">
+                </video>
+
+                <div class="preview-overlay">
+                    <div class="preview-graphic">
+                        <div class="preview-breaking">BREAKING NEWS</div>
+                        <div class="preview-headline">Terremoto magnitudo 4.2 a Milano</div>
+                        <div class="preview-subtitle">San Siro • Profondità 10km • LIVE</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="preview-controls">
+                <button class="preview-btn cue">
+                    <i class="fas fa-crosshairs"></i>
+                    CUE
+                </button>
+                <button class="preview-btn play">
+                    <i class="fas fa-play"></i>
+                    TAKE
+                </button>
+                <button class="preview-btn stop">
+                    <i class="fas fa-stop"></i>
+                    STOP
+                </button>
+            </div>
+
+            <!-- DEVICE STATUS -->
+            <div class="device-status">
+                <div class="media-section-title">DEVICE STATUS</div>
+                <div class="device-grid">
+                    <div class="device-item">
+                        <span class="device-indicator"></span>
+                        <span>CasparCG 1</span>
+                    </div>
+                    <div class="device-item">
+                        <span class="device-indicator"></span>
+                        <span>Video Server</span>
+                    </div>
+                    <div class="device-item">
+                        <span class="device-indicator"></span>
+                        <span>Audio Mixer</span>
+                    </div>
+                    <div class="device-item">
+                        <span class="device-indicator offline"></span>
+                        <span>Prompter</span>
+                    </div>
+                    <div class="device-item">
+                        <span class="device-indicator"></span>
+                        <span>Graphics</span>
+                    </div>
+                    <div class="device-item">
+                        <span class="device-indicator error"></span>
+                        <span>Playout 2</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TIMELINE -->
+            <div style="padding: 16px; background: var(--bg-card); border-top: 1px solid var(--border);">
+                <div class="media-section-title">PROGRAM TIMELINE</div>
+                <div style="position: relative; height: 40px; background: var(--bg-panel); border-radius: 4px; overflow: hidden;">
+                    <div style="position: absolute; left: 0; width: 45%; height: 100%; background: linear-gradient(90deg, var(--primary) 0%, var(--primary-dark) 100%);"></div>
+                    <div style="position: absolute; left: 45%; width: 2px; height: 100%; background: var(--accent); animation: blink 1s infinite;"></div>
+                    <div style="position: absolute; left: 0; right: 0; top: 50%; transform: translateY(-50%); display: flex; justify-content: space-between; padding: 0 16px; font-size: 11px; color: white; font-weight: 600;">
+                        <span>12:45</span>
+                        <span>25:00</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- STATUS BAR -->
+    <div class="status-bar">
+        <div class="status-section">
+            <span class="status-indicator"></span>
+            <span class="status-label">MOS:</span>
+            <span class="status-value">Connected</span>
+        </div>
+
+        <div class="status-section">
+            <span class="status-label">Server:</span>
+            <span class="status-value">NEWS-SRV-01</span>
+        </div>
+
+        <div class="status-section">
+            <span class="status-label">User:</span>
+            <span class="status-value">mrossi</span>
+        </div>
+
+        <div class="status-section">
+            <span class="status-label">Show:</span>
+            <span class="status-value">TG20_231124</span>
+        </div>
+
+        <div class="status-section">
+            <span>© 2025 iNEWS Professional</span>
+        </div>
+    </div>
+
+    <script>
+        // Timer
+        let seconds = 0;
+        setInterval(() => {
+            seconds++;
+            const h = Math.floor(seconds / 3600);
+            const m = Math.floor((seconds % 3600) / 60);
+            const s = seconds % 60;
+            document.getElementById('timer').textContent =
+                `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+        }, 1000);
+
+        // Row Selection
+        document.querySelectorAll('.rundown-row').forEach(row => {
+            row.addEventListener('click', function() {
+                document.querySelectorAll('.rundown-row').forEach(r => r.classList.remove('selected'));
+                this.classList.add('selected');
+            });
+        });
+
+        // Drag and Drop
+        let draggedElement = null;
+
+        document.querySelectorAll('.media-item').forEach(item => {
+            item.addEventListener('dragstart', (e) => {
+                draggedElement = e.target;
+                e.target.classList.add('dragging');
+            });
+
+            item.addEventListener('dragend', (e) => {
+                e.target.classList.remove('dragging');
+            });
+        });
+
+        const dropZone = document.getElementById('dropZone');
+
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZone.classList.add('drag-over');
+        });
+
+        dropZone.addEventListener('dragleave', () => {
+            dropZone.classList.remove('drag-over');
+        });
+
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('drag-over');
+
+            if (draggedElement) {
+                console.log('Dropped:', draggedElement.querySelector('.media-item-name').textContent);
+                // Add to script
+            }
+        });
+
+        // Preview Controls
+        document.querySelector('.preview-btn.play').addEventListener('click', () => {
+            console.log('TAKE - Going to air');
+            document.querySelector('.preview-overlay').style.display = 'flex';
+        });
+
+        document.querySelector('.preview-btn.stop').addEventListener('click', () => {
+            console.log('STOP - Clear graphics');
+            document.querySelector('.preview-overlay').style.display = 'none';
+        });
+
+        document.querySelector('.preview-btn.cue').addEventListener('click', () => {
+            console.log('CUE - Ready next item');
+        });
+
+        // Keyboard Shortcuts
+        document.addEventListener('keydown', (e) => {
+            if (e.ctrlKey || e.metaKey) {
+                switch(e.key) {
+                    case 's':
+                        e.preventDefault();
+                        console.log('Save');
+                        break;
+                    case 'n':
+                        e.preventDefault();
+                        console.log('New Story');
+                        break;
+                    case 'Enter':
+                        e.preventDefault();
+                        console.log('Take to air');
+                        break;
+                    case ' ':
+                        e.preventDefault();
+                        console.log('Play/Pause');
+                        break;
+                }
+            }
+        });
+
+        console.log('🎬 iNEWS Professional 2025 - Complete Newsroom System Ready');
+    </script>
+</body>
+</html>

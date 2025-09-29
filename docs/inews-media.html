@@ -1,0 +1,1112 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>iNEWS - Gestione Media</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+    <style>
+        :root {
+            --primary: #0066CC;
+            --accent: #FF0040;
+            --success: #00C851;
+            --warning: #FFB300;
+            --danger: #DC3545;
+            --bg-main: #0A0C0F;
+            --bg-panel: #141821;
+            --bg-card: #1C2028;
+            --bg-hover: #252A35;
+            --bg-selected: #2A3142;
+            --border: #2A2E3A;
+            --text-primary: #FFFFFF;
+            --text-secondary: #B4BAC6;
+            --text-muted: #6C7485;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg-main);
+            color: var(--text-primary);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* Header */
+        .media-header {
+            padding: 20px;
+            background: var(--bg-panel);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header-left {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+        }
+
+        .media-title {
+            font-size: 20px;
+            font-weight: 700;
+        }
+
+        .media-stats {
+            display: flex;
+            gap: 16px;
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+
+        .stat-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 12px;
+        }
+
+        .btn {
+            padding: 8px 16px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.2s;
+        }
+
+        .btn:hover {
+            opacity: 0.9;
+        }
+
+        .btn.secondary {
+            background: var(--bg-hover);
+            color: var(--text-primary);
+        }
+
+        /* Filters Bar */
+        .filters-bar {
+            padding: 16px 20px;
+            background: var(--bg-card);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            gap: 16px;
+            align-items: center;
+        }
+
+        .filter-group {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .filter-label {
+            font-size: 12px;
+            color: var(--text-muted);
+            font-weight: 600;
+        }
+
+        .filter-select {
+            padding: 6px 10px;
+            background: var(--bg-main);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            color: var(--text-primary);
+            font-size: 12px;
+        }
+
+        .search-input {
+            flex: 1;
+            padding: 8px 12px;
+            background: var(--bg-main);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            color: var(--text-primary);
+            font-size: 13px;
+        }
+
+        .view-toggle {
+            display: flex;
+            background: var(--bg-main);
+            border-radius: 6px;
+            overflow: hidden;
+            border: 1px solid var(--border);
+        }
+
+        .view-btn {
+            padding: 8px 12px;
+            background: transparent;
+            border: none;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .view-btn.active {
+            background: var(--primary);
+            color: white;
+        }
+
+        /* Main Layout */
+        .media-container {
+            flex: 1;
+            display: flex;
+            overflow: hidden;
+        }
+
+        /* Media Grid */
+        .media-main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .media-grid {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+            gap: 16px;
+        }
+
+        .media-item {
+            background: var(--bg-panel);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            overflow: hidden;
+            cursor: pointer;
+            transition: all 0.2s;
+            position: relative;
+        }
+
+        .media-item:hover {
+            border-color: var(--primary);
+            transform: translateY(-2px);
+        }
+
+        .media-item.selected {
+            border-color: var(--primary);
+            background: var(--bg-selected);
+        }
+
+        .media-thumbnail {
+            aspect-ratio: 16/9;
+            background: var(--bg-main);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .thumbnail-placeholder {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-muted);
+            font-size: 48px;
+        }
+
+        .media-type-badge {
+            position: absolute;
+            top: 8px;
+            left: 8px;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        .badge-video {
+            background: #4A90E2;
+            color: white;
+        }
+
+        .badge-audio {
+            background: #00BFA5;
+            color: white;
+        }
+
+        .badge-image {
+            background: #9C27B0;
+            color: white;
+        }
+
+        .media-duration {
+            position: absolute;
+            bottom: 8px;
+            right: 8px;
+            background: rgba(0,0,0,0.8);
+            color: white;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-family: 'Roboto Mono', monospace;
+        }
+
+        .media-info {
+            padding: 12px;
+        }
+
+        .media-name {
+            font-size: 13px;
+            font-weight: 600;
+            margin-bottom: 4px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .media-details {
+            font-size: 11px;
+            color: var(--text-muted);
+            margin-bottom: 8px;
+        }
+
+        .media-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 10px;
+            color: var(--text-muted);
+        }
+
+        .media-size {
+            font-family: 'Roboto Mono', monospace;
+        }
+
+        .media-actions {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            display: flex;
+            gap: 4px;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+
+        .media-item:hover .media-actions {
+            opacity: 1;
+        }
+
+        .action-btn {
+            width: 28px;
+            height: 28px;
+            background: rgba(0,0,0,0.8);
+            border: none;
+            border-radius: 4px;
+            color: white;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            transition: all 0.2s;
+        }
+
+        .action-btn:hover {
+            background: var(--primary);
+        }
+
+        /* Right Panel - Media Details */
+        .media-details-panel {
+            width: 350px;
+            background: var(--bg-panel);
+            border-left: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .details-header {
+            padding: 16px 20px;
+            background: var(--bg-card);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .details-title {
+            font-size: 14px;
+            font-weight: 600;
+            text-transform: uppercase;
+            color: var(--text-secondary);
+        }
+
+        .details-content {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+        }
+
+        .preview-section {
+            margin-bottom: 24px;
+        }
+
+        .large-preview {
+            aspect-ratio: 16/9;
+            background: #000;
+            border-radius: 8px;
+            margin-bottom: 12px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .preview-placeholder {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-muted);
+        }
+
+        .preview-controls {
+            display: flex;
+            gap: 8px;
+        }
+
+        .control-btn {
+            flex: 1;
+            padding: 8px 12px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 11px;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+
+        .control-btn.play {
+            background: var(--success);
+            color: white;
+        }
+
+        .control-btn.download {
+            background: var(--primary);
+            color: white;
+        }
+
+        .control-btn.delete {
+            background: var(--danger);
+            color: white;
+        }
+
+        .info-section {
+            margin-bottom: 24px;
+        }
+
+        .section-title {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            margin-bottom: 12px;
+        }
+
+        .info-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            font-size: 13px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .info-label {
+            color: var(--text-muted);
+        }
+
+        .info-value {
+            color: var(--text-primary);
+            font-weight: 500;
+            font-family: 'Roboto Mono', monospace;
+        }
+
+        .tags-section {
+            margin-bottom: 24px;
+        }
+
+        .tags-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+
+        .tag {
+            padding: 4px 8px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            font-size: 11px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .tag-remove {
+            cursor: pointer;
+            color: var(--text-muted);
+            font-size: 10px;
+        }
+
+        .tag-remove:hover {
+            color: var(--danger);
+        }
+
+        .add-tag {
+            padding: 4px 8px;
+            background: transparent;
+            border: 1px dashed var(--border);
+            border-radius: 12px;
+            font-size: 11px;
+            cursor: pointer;
+            color: var(--text-muted);
+        }
+
+        .add-tag:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+
+        /* Upload Zone */
+        .upload-zone {
+            border: 2px dashed var(--border);
+            border-radius: 12px;
+            padding: 40px 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .upload-zone:hover {
+            border-color: var(--primary);
+            background: var(--bg-card);
+        }
+
+        .upload-zone.drag-over {
+            border-color: var(--primary);
+            background: var(--bg-selected);
+        }
+
+        .upload-icon {
+            font-size: 48px;
+            color: var(--text-muted);
+            margin-bottom: 16px;
+        }
+
+        .upload-text {
+            font-size: 14px;
+            margin-bottom: 8px;
+        }
+
+        .upload-hint {
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        /* Progress Bar */
+        .upload-progress {
+            margin-top: 16px;
+            height: 4px;
+            background: var(--bg-card);
+            border-radius: 2px;
+            overflow: hidden;
+            display: none;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: var(--primary);
+            width: 0%;
+            transition: width 0.3s;
+        }
+
+        /* Waveform */
+        .waveform {
+            height: 60px;
+            background: var(--bg-card);
+            border-radius: 6px;
+            margin: 12px 0;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .waveform-bars {
+            display: flex;
+            align-items: end;
+            height: 100%;
+            padding: 4px;
+            gap: 1px;
+        }
+
+        .waveform-bar {
+            flex: 1;
+            background: var(--primary);
+            opacity: 0.6;
+            transition: height 0.1s;
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <div class="media-header">
+        <div class="header-left">
+            <h1 class="media-title">Gestione Media</h1>
+            <div class="media-stats">
+                <div class="stat-item">
+                    <i class="fas fa-folder"></i>
+                    <span>247 files</span>
+                </div>
+                <div class="stat-item">
+                    <i class="fas fa-hdd"></i>
+                    <span>12.4 GB utilizzati</span>
+                </div>
+                <div class="stat-item">
+                    <i class="fas fa-clock"></i>
+                    <span>Ultimo sync: 2 min fa</span>
+                </div>
+            </div>
+        </div>
+        <div class="header-actions">
+            <button class="btn secondary">
+                <i class="fas fa-sync"></i>
+                Sincronizza
+            </button>
+            <button class="btn">
+                <i class="fas fa-upload"></i>
+                Upload Media
+            </button>
+        </div>
+    </div>
+
+    <!-- Filters Bar -->
+    <div class="filters-bar">
+        <div class="filter-group">
+            <span class="filter-label">Tipo:</span>
+            <select class="filter-select">
+                <option>Tutti</option>
+                <option>Video</option>
+                <option>Audio</option>
+                <option>Immagini</option>
+            </select>
+        </div>
+        <div class="filter-group">
+            <span class="filter-label">Data:</span>
+            <select class="filter-select">
+                <option>Tutte</option>
+                <option>Oggi</option>
+                <option>Ultima settimana</option>
+                <option>Ultimo mese</option>
+            </select>
+        </div>
+        <div class="filter-group">
+            <span class="filter-label">Dimensione:</span>
+            <select class="filter-select">
+                <option>Tutte</option>
+                <option>< 100MB</option>
+                <option>100MB - 1GB</option>
+                <option>> 1GB</option>
+            </select>
+        </div>
+        <input type="text" class="search-input" placeholder="Cerca media...">
+        <div class="view-toggle">
+            <button class="view-btn active">
+                <i class="fas fa-th"></i>
+            </button>
+            <button class="view-btn">
+                <i class="fas fa-list"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- Main Container -->
+    <div class="media-container">
+        <!-- Media Grid -->
+        <div class="media-main">
+            <div class="media-grid">
+                <!-- Upload Zone -->
+                <div class="upload-zone" id="upload-zone">
+                    <div class="upload-icon">
+                        <i class="fas fa-cloud-upload-alt"></i>
+                    </div>
+                    <div class="upload-text">Trascina i file qui o clicca per selezionare</div>
+                    <div class="upload-hint">Supportati: MP4, MOV, AVI, MP3, WAV, JPG, PNG (max 2GB)</div>
+                    <div class="upload-progress">
+                        <div class="progress-fill"></div>
+                    </div>
+                </div>
+
+                <!-- Media Item 1 -->
+                <div class="media-item selected">
+                    <div class="media-thumbnail">
+                        <div class="thumbnail-placeholder">
+                            <i class="fas fa-video"></i>
+                        </div>
+                        <div class="media-type-badge badge-video">Video</div>
+                        <div class="media-duration">02:30</div>
+                        <div class="media-actions">
+                            <button class="action-btn">
+                                <i class="fas fa-play"></i>
+                            </button>
+                            <button class="action-btn">
+                                <i class="fas fa-download"></i>
+                            </button>
+                            <button class="action-btn">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="media-info">
+                        <div class="media-name">PKG_TERREMOTO_MILANO_V2.mp4</div>
+                        <div class="media-details">1920x1080 • H.264 • 25fps</div>
+                        <div class="media-meta">
+                            <span>Oggi, 14:30</span>
+                            <span class="media-size">450 MB</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Media Item 2 -->
+                <div class="media-item">
+                    <div class="media-thumbnail">
+                        <div class="thumbnail-placeholder">
+                            <i class="fas fa-video"></i>
+                        </div>
+                        <div class="media-type-badge badge-video">Video</div>
+                        <div class="media-duration">04:15</div>
+                        <div class="media-actions">
+                            <button class="action-btn">
+                                <i class="fas fa-play"></i>
+                            </button>
+                            <button class="action-btn">
+                                <i class="fas fa-download"></i>
+                            </button>
+                            <button class="action-btn">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="media-info">
+                        <div class="media-name">INTERVISTA_SINDACO.mp4</div>
+                        <div class="media-details">1920x1080 • H.264 • 25fps</div>
+                        <div class="media-meta">
+                            <span>Oggi, 13:45</span>
+                            <span class="media-size">680 MB</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Media Item 3 -->
+                <div class="media-item">
+                    <div class="media-thumbnail">
+                        <div class="thumbnail-placeholder">
+                            <i class="fas fa-music"></i>
+                        </div>
+                        <div class="media-type-badge badge-audio">Audio</div>
+                        <div class="media-duration">01:15</div>
+                        <div class="media-actions">
+                            <button class="action-btn">
+                                <i class="fas fa-play"></i>
+                            </button>
+                            <button class="action-btn">
+                                <i class="fas fa-download"></i>
+                            </button>
+                            <button class="action-btn">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="media-info">
+                        <div class="media-name">TESTIMONE_AUDIO.wav</div>
+                        <div class="media-details">48kHz • Stereo • 16-bit</div>
+                        <div class="media-meta">
+                            <span>Oggi, 12:30</span>
+                            <span class="media-size">89 MB</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Media Item 4 -->
+                <div class="media-item">
+                    <div class="media-thumbnail">
+                        <div class="thumbnail-placeholder">
+                            <i class="fas fa-image"></i>
+                        </div>
+                        <div class="media-type-badge badge-image">Image</div>
+                        <div class="media-actions">
+                            <button class="action-btn">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                            <button class="action-btn">
+                                <i class="fas fa-download"></i>
+                            </button>
+                            <button class="action-btn">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="media-info">
+                        <div class="media-name">MAPPA_EPICENTRO.png</div>
+                        <div class="media-details">1920x1080 • PNG</div>
+                        <div class="media-meta">
+                            <span>Oggi, 11:15</span>
+                            <span class="media-size">2.4 MB</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Media Item 5 -->
+                <div class="media-item">
+                    <div class="media-thumbnail">
+                        <div class="thumbnail-placeholder">
+                            <i class="fas fa-video"></i>
+                        </div>
+                        <div class="media-type-badge badge-video">Video</div>
+                        <div class="media-duration">03:00</div>
+                        <div class="media-actions">
+                            <button class="action-btn">
+                                <i class="fas fa-play"></i>
+                            </button>
+                            <button class="action-btn">
+                                <i class="fas fa-download"></i>
+                            </button>
+                            <button class="action-btn">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="media-info">
+                        <div class="media-name">ELEZIONI_USA_LIVE.mp4</div>
+                        <div class="media-details">1920x1080 • H.264 • 25fps</div>
+                        <div class="media-meta">
+                            <span>Ieri, 20:15</span>
+                            <span class="media-size">520 MB</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Media Item 6 -->
+                <div class="media-item">
+                    <div class="media-thumbnail">
+                        <div class="thumbnail-placeholder">
+                            <i class="fas fa-video"></i>
+                        </div>
+                        <div class="media-type-badge badge-video">Video</div>
+                        <div class="media-duration">02:45</div>
+                        <div class="media-actions">
+                            <button class="action-btn">
+                                <i class="fas fa-play"></i>
+                            </button>
+                            <button class="action-btn">
+                                <i class="fas fa-download"></i>
+                            </button>
+                            <button class="action-btn">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="media-info">
+                        <div class="media-name">SPORT_HIGHLIGHTS.mp4</div>
+                        <div class="media-details">1920x1080 • H.264 • 25fps</div>
+                        <div class="media-meta">
+                            <span>Ieri, 18:45</span>
+                            <span class="media-size">420 MB</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Media Details Panel -->
+        <div class="media-details-panel">
+            <div class="details-header">
+                <h3 class="details-title">Dettagli Media</h3>
+            </div>
+
+            <div class="details-content">
+                <!-- Preview Section -->
+                <div class="preview-section">
+                    <div class="large-preview">
+                        <div class="preview-placeholder">
+                            <i class="fas fa-video" style="font-size: 64px;"></i>
+                        </div>
+                    </div>
+                    <div class="preview-controls">
+                        <button class="control-btn play">
+                            <i class="fas fa-play"></i>
+                            Play
+                        </button>
+                        <button class="control-btn download">
+                            <i class="fas fa-download"></i>
+                            Download
+                        </button>
+                        <button class="control-btn delete">
+                            <i class="fas fa-trash"></i>
+                            Delete
+                        </button>
+                    </div>
+                </div>
+
+                <!-- File Information -->
+                <div class="info-section">
+                    <div class="section-title">Informazioni File</div>
+                    <div class="info-item">
+                        <span class="info-label">Nome:</span>
+                        <span class="info-value">PKG_TERREMOTO_MILANO_V2.mp4</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Dimensione:</span>
+                        <span class="info-value">450.2 MB</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Durata:</span>
+                        <span class="info-value">00:02:30</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Risoluzione:</span>
+                        <span class="info-value">1920x1080</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Frame Rate:</span>
+                        <span class="info-value">25 fps</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Codec:</span>
+                        <span class="info-value">H.264</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Bitrate:</span>
+                        <span class="info-value">25 Mbps</span>
+                    </div>
+                </div>
+
+                <!-- Metadata -->
+                <div class="info-section">
+                    <div class="section-title">Metadata</div>
+                    <div class="info-item">
+                        <span class="info-label">Creato:</span>
+                        <span class="info-value">27/01/2024 14:30</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Modificato:</span>
+                        <span class="info-value">27/01/2024 14:32</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Caricato da:</span>
+                        <span class="info-value">Mario Rossi</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Formato:</span>
+                        <span class="info-value">MP4</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Checksum:</span>
+                        <span class="info-value">a7b2c3d4...</span>
+                    </div>
+                </div>
+
+                <!-- Audio Waveform (for video/audio files) -->
+                <div class="info-section">
+                    <div class="section-title">Audio Waveform</div>
+                    <div class="waveform">
+                        <div class="waveform-bars" id="waveform-display"></div>
+                    </div>
+                </div>
+
+                <!-- Tags -->
+                <div class="tags-section">
+                    <div class="section-title">Tags</div>
+                    <div class="tags-container">
+                        <div class="tag">
+                            terremoto
+                            <i class="fas fa-times tag-remove"></i>
+                        </div>
+                        <div class="tag">
+                            milano
+                            <i class="fas fa-times tag-remove"></i>
+                        </div>
+                        <div class="tag">
+                            breaking
+                            <i class="fas fa-times tag-remove"></i>
+                        </div>
+                        <div class="tag">
+                            pkg
+                            <i class="fas fa-times tag-remove"></i>
+                        </div>
+                        <div class="add-tag">
+                            <i class="fas fa-plus"></i>
+                            Aggiungi tag
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Usage History -->
+                <div class="info-section">
+                    <div class="section-title">Cronologia Utilizzo</div>
+                    <div class="info-item">
+                        <span class="info-label">Ultimo uso:</span>
+                        <span class="info-value">27/01/2024 15:45</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Volte utilizzato:</span>
+                        <span class="info-value">3</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">In rundown:</span>
+                        <span class="info-value">TG delle 20:00</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Media item selection
+        document.querySelectorAll('.media-item').forEach(item => {
+            item.addEventListener('click', function() {
+                if (this.classList.contains('upload-zone')) return;
+
+                document.querySelectorAll('.media-item').forEach(m => {
+                    m.classList.remove('selected');
+                });
+                this.classList.add('selected');
+
+                const mediaName = this.querySelector('.media-name')?.textContent || 'Unknown';
+                console.log('Selected media:', mediaName);
+            });
+        });
+
+        // View toggle
+        document.querySelectorAll('.view-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                document.querySelectorAll('.view-btn').forEach(b => {
+                    b.classList.remove('active');
+                });
+                this.classList.add('active');
+            });
+        });
+
+        // Upload zone
+        const uploadZone = document.getElementById('upload-zone');
+
+        uploadZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadZone.classList.add('drag-over');
+        });
+
+        uploadZone.addEventListener('dragleave', () => {
+            uploadZone.classList.remove('drag-over');
+        });
+
+        uploadZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadZone.classList.remove('drag-over');
+
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                simulateUpload(files[0]);
+            }
+        });
+
+        uploadZone.addEventListener('click', () => {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = 'video/*,audio/*,image/*';
+            input.onchange = (e) => {
+                if (e.target.files.length > 0) {
+                    simulateUpload(e.target.files[0]);
+                }
+            };
+            input.click();
+        });
+
+        function simulateUpload(file) {
+            const progressBar = document.querySelector('.upload-progress');
+            const progressFill = document.querySelector('.progress-fill');
+
+            progressBar.style.display = 'block';
+
+            let progress = 0;
+            const interval = setInterval(() => {
+                progress += Math.random() * 15;
+                if (progress >= 100) {
+                    progress = 100;
+                    clearInterval(interval);
+                    setTimeout(() => {
+                        progressBar.style.display = 'none';
+                        progressFill.style.width = '0%';
+                        console.log('Upload completed:', file.name);
+                    }, 500);
+                }
+                progressFill.style.width = progress + '%';
+            }, 200);
+        }
+
+        // Control buttons
+        document.querySelectorAll('.control-btn, .action-btn').forEach(btn => {
+            btn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                console.log('Action:', this.textContent.trim() || this.innerHTML);
+            });
+        });
+
+        // Tags
+        document.querySelectorAll('.tag-remove').forEach(remove => {
+            remove.addEventListener('click', function(e) {
+                e.stopPropagation();
+                this.parentElement.remove();
+            });
+        });
+
+        document.querySelector('.add-tag').addEventListener('click', function() {
+            const tag = prompt('Inserisci nuovo tag:');
+            if (tag) {
+                const newTag = document.createElement('div');
+                newTag.className = 'tag';
+                newTag.innerHTML = `${tag} <i class="fas fa-times tag-remove"></i>`;
+                this.parentElement.insertBefore(newTag, this);
+
+                newTag.querySelector('.tag-remove').addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    newTag.remove();
+                });
+            }
+        });
+
+        // Generate waveform
+        function generateWaveform() {
+            const container = document.getElementById('waveform-display');
+            container.innerHTML = '';
+
+            for (let i = 0; i < 100; i++) {
+                const bar = document.createElement('div');
+                bar.className = 'waveform-bar';
+                bar.style.height = Math.random() * 80 + 10 + '%';
+                container.appendChild(bar);
+            }
+        }
+
+        generateWaveform();
+
+        console.log('Media Management loaded successfully');
+    </script>
+</body>
+</html>

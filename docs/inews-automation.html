@@ -1,0 +1,810 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>iNEWS - Automation Playlist</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+    <style>
+        :root {
+            --primary: #0066CC;
+            --accent: #FF0040;
+            --success: #00C851;
+            --warning: #FFB300;
+            --danger: #DC3545;
+            --bg-main: #0A0C0F;
+            --bg-panel: #141821;
+            --bg-card: #1C2028;
+            --bg-hover: #252A35;
+            --bg-selected: #2A3142;
+            --border: #2A2E3A;
+            --text-primary: #FFFFFF;
+            --text-secondary: #B4BAC6;
+            --text-muted: #6C7485;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg-main);
+            color: var(--text-primary);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* Header */
+        .automation-header {
+            padding: 20px;
+            background: var(--bg-panel);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header-info {
+            display: flex;
+            align-items: center;
+            gap: 24px;
+        }
+
+        .show-title {
+            font-size: 20px;
+            font-weight: 700;
+        }
+
+        .automation-status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            background: var(--bg-card);
+            border-radius: 6px;
+        }
+
+        .status-indicator {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        .status-indicator.ready {
+            background: var(--success);
+        }
+
+        .status-indicator.playing {
+            background: var(--accent);
+        }
+
+        .status-indicator.paused {
+            background: var(--warning);
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        /* Control Bar */
+        .control-bar {
+            padding: 16px 20px;
+            background: var(--bg-card);
+            border-bottom: 2px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .transport-controls {
+            display: flex;
+            gap: 8px;
+        }
+
+        .control-btn {
+            width: 56px;
+            height: 56px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 700;
+            font-size: 12px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+            transition: all 0.2s;
+        }
+
+        .control-btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .control-btn.play {
+            background: var(--success);
+            color: white;
+        }
+
+        .control-btn.stop {
+            background: var(--danger);
+            color: white;
+        }
+
+        .control-btn.pause {
+            background: var(--warning);
+            color: white;
+        }
+
+        .control-btn.next {
+            background: var(--primary);
+            color: white;
+        }
+
+        .control-btn.hold {
+            background: var(--bg-hover);
+            color: var(--text-primary);
+        }
+
+        .timing-display {
+            display: flex;
+            gap: 32px;
+            align-items: center;
+        }
+
+        .time-block {
+            text-align: center;
+        }
+
+        .time-label {
+            font-size: 11px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            margin-bottom: 4px;
+        }
+
+        .time-value {
+            font-size: 28px;
+            font-weight: 700;
+            font-family: 'Roboto Mono', monospace;
+        }
+
+        .time-value.warning {
+            color: var(--warning);
+        }
+
+        .time-value.danger {
+            color: var(--danger);
+        }
+
+        /* Main Layout */
+        .automation-container {
+            flex: 1;
+            display: flex;
+            overflow: hidden;
+        }
+
+        /* Playlist Panel */
+        .playlist-panel {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: var(--bg-main);
+        }
+
+        .playlist-header {
+            padding: 16px 20px;
+            background: var(--bg-panel);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .playlist-title {
+            font-size: 14px;
+            font-weight: 600;
+            text-transform: uppercase;
+            color: var(--text-secondary);
+        }
+
+        .playlist-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .btn {
+            padding: 6px 12px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .playlist-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 8px;
+        }
+
+        .playlist-item {
+            background: var(--bg-panel);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 12px 16px;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+
+        .playlist-item:hover {
+            background: var(--bg-hover);
+        }
+
+        .playlist-item.playing {
+            background: var(--bg-selected);
+            border-color: var(--accent);
+        }
+
+        .playlist-item.next {
+            border-color: var(--primary);
+        }
+
+        .playlist-item.hold {
+            background: var(--warning);
+            background: rgba(255, 179, 0, 0.1);
+            border-color: var(--warning);
+        }
+
+        .item-number {
+            width: 32px;
+            height: 32px;
+            background: var(--bg-card);
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 14px;
+        }
+
+        .item-status {
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+        }
+
+        .item-info {
+            flex: 1;
+        }
+
+        .item-slug {
+            font-weight: 700;
+            font-size: 14px;
+            margin-bottom: 4px;
+        }
+
+        .item-title {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        .item-type {
+            padding: 4px 8px;
+            background: var(--bg-card);
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        .item-duration {
+            font-family: 'Roboto Mono', monospace;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .item-controls {
+            display: flex;
+            gap: 8px;
+        }
+
+        .item-btn {
+            width: 28px;
+            height: 28px;
+            border: none;
+            background: var(--bg-card);
+            border-radius: 4px;
+            color: var(--text-secondary);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+
+        .item-btn:hover {
+            background: var(--bg-hover);
+            color: var(--text-primary);
+        }
+
+        /* Preview Panel */
+        .preview-panel {
+            width: 400px;
+            background: var(--bg-panel);
+            border-left: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .preview-header {
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .preview-monitor {
+            aspect-ratio: 16/9;
+            background: #000;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .preview-content {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-muted);
+        }
+
+        .preview-overlay {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            padding: 12px;
+            background: linear-gradient(transparent, rgba(0,0,0,0.8));
+        }
+
+        .preview-info {
+            padding: 20px;
+        }
+
+        .info-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            font-size: 13px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .info-label {
+            color: var(--text-muted);
+        }
+
+        .info-value {
+            color: var(--text-primary);
+            font-weight: 500;
+        }
+
+        /* Settings Modal */
+        .settings-section {
+            margin-bottom: 24px;
+        }
+
+        .settings-title {
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 12px;
+            color: var(--text-secondary);
+        }
+
+        .setting-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+        }
+
+        .toggle {
+            width: 44px;
+            height: 24px;
+            background: var(--bg-card);
+            border-radius: 12px;
+            position: relative;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .toggle.active {
+            background: var(--primary);
+        }
+
+        .toggle-handle {
+            width: 20px;
+            height: 20px;
+            background: white;
+            border-radius: 50%;
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            transition: left 0.3s;
+        }
+
+        .toggle.active .toggle-handle {
+            left: 22px;
+        }
+
+        /* Progress Bar */
+        .progress-bar {
+            height: 4px;
+            background: var(--bg-card);
+            position: relative;
+            margin: 16px 0;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: var(--primary);
+            width: 35%;
+            transition: width 0.3s;
+        }
+
+        .progress-marker {
+            position: absolute;
+            top: -6px;
+            width: 16px;
+            height: 16px;
+            background: white;
+            border: 2px solid var(--primary);
+            border-radius: 50%;
+            left: 35%;
+            transform: translateX(-50%);
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <div class="automation-header">
+        <div class="header-info">
+            <h1 class="show-title">TG delle 20:00 - Automation Playlist</h1>
+            <div class="automation-status">
+                <div class="status-indicator playing"></div>
+                <span>ON AIR - Item 5 of 24</span>
+            </div>
+        </div>
+        <div>
+            <button class="btn">
+                <i class="fas fa-cog"></i>
+                Settings
+            </button>
+        </div>
+    </div>
+
+    <!-- Control Bar -->
+    <div class="control-bar">
+        <div class="transport-controls">
+            <button class="control-btn play">
+                <i class="fas fa-play" style="font-size: 20px;"></i>
+                <span>PLAY</span>
+            </button>
+            <button class="control-btn stop">
+                <i class="fas fa-stop" style="font-size: 20px;"></i>
+                <span>STOP</span>
+            </button>
+            <button class="control-btn pause">
+                <i class="fas fa-pause" style="font-size: 20px;"></i>
+                <span>PAUSE</span>
+            </button>
+            <button class="control-btn next">
+                <i class="fas fa-step-forward" style="font-size: 20px;"></i>
+                <span>NEXT</span>
+            </button>
+            <button class="control-btn hold">
+                <i class="fas fa-hand-paper" style="font-size: 20px;"></i>
+                <span>HOLD</span>
+            </button>
+        </div>
+
+        <div class="timing-display">
+            <div class="time-block">
+                <div class="time-label">Elapsed</div>
+                <div class="time-value">12:45</div>
+            </div>
+            <div class="time-block">
+                <div class="time-label">Remaining</div>
+                <div class="time-value">17:15</div>
+            </div>
+            <div class="time-block">
+                <div class="time-label">Total</div>
+                <div class="time-value">30:00</div>
+            </div>
+            <div class="time-block">
+                <div class="time-label">Backtime</div>
+                <div class="time-value warning">-00:30</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Container -->
+    <div class="automation-container">
+        <!-- Playlist Panel -->
+        <div class="playlist-panel">
+            <div class="playlist-header">
+                <div class="playlist-title">Automation Playlist</div>
+                <div class="playlist-actions">
+                    <button class="btn" style="background: var(--bg-hover); color: var(--text-primary);">
+                        <i class="fas fa-sync"></i>
+                        Refresh
+                    </button>
+                    <button class="btn">
+                        <i class="fas fa-list"></i>
+                        Load Rundown
+                    </button>
+                </div>
+            </div>
+
+            <div class="playlist-content">
+                <!-- Playing Item -->
+                <div class="playlist-item playing">
+                    <div class="item-status">
+                        <i class="fas fa-play-circle" style="color: var(--accent);"></i>
+                    </div>
+                    <div class="item-number">5</div>
+                    <div class="item-info">
+                        <div class="item-slug">TERREMOTO_MILANO</div>
+                        <div class="item-title">Terremoto magnitudo 4.2 a Milano</div>
+                    </div>
+                    <div class="item-type" style="background: #4A90E2; color: white;">PKG</div>
+                    <div class="item-duration">02:30</div>
+                    <div class="progress-bar" style="width: 120px;">
+                        <div class="progress-fill" style="width: 65%;"></div>
+                        <div class="progress-marker" style="left: 65%;"></div>
+                    </div>
+                    <div class="item-controls">
+                        <button class="item-btn">
+                            <i class="fas fa-redo"></i>
+                        </button>
+                        <button class="item-btn">
+                            <i class="fas fa-step-forward"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Next Item -->
+                <div class="playlist-item next">
+                    <div class="item-status">
+                        <i class="fas fa-arrow-circle-right" style="color: var(--primary);"></i>
+                    </div>
+                    <div class="item-number">6</div>
+                    <div class="item-info">
+                        <div class="item-slug">INTERVISTA_SINDACO</div>
+                        <div class="item-title">Intervista al Sindaco di Milano</div>
+                    </div>
+                    <div class="item-type" style="background: var(--accent); color: white;">LIVE</div>
+                    <div class="item-duration">03:00</div>
+                    <div class="item-controls">
+                        <button class="item-btn">
+                            <i class="fas fa-play"></i>
+                        </button>
+                        <button class="item-btn">
+                            <i class="fas fa-hand-paper"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Hold Point -->
+                <div class="playlist-item hold">
+                    <div class="item-status">
+                        <i class="fas fa-hand-paper" style="color: var(--warning);"></i>
+                    </div>
+                    <div class="item-number">7</div>
+                    <div class="item-info">
+                        <div class="item-slug">HOLD_POINT</div>
+                        <div class="item-title" style="color: var(--warning);">Manual trigger required</div>
+                    </div>
+                    <div class="item-type" style="background: var(--warning); color: white;">HOLD</div>
+                    <div class="item-duration">--:--</div>
+                    <div class="item-controls">
+                        <button class="item-btn">
+                            <i class="fas fa-play"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Regular Items -->
+                <div class="playlist-item">
+                    <div class="item-status">
+                        <i class="fas fa-circle" style="font-size: 8px; color: var(--text-muted);"></i>
+                    </div>
+                    <div class="item-number">8</div>
+                    <div class="item-info">
+                        <div class="item-slug">ECONOMIA_PIL</div>
+                        <div class="item-title">PIL Italia +2.3% nel trimestre</div>
+                    </div>
+                    <div class="item-type" style="background: var(--warning); color: white;">GFX</div>
+                    <div class="item-duration">01:45</div>
+                    <div class="item-controls">
+                        <button class="item-btn">
+                            <i class="fas fa-play"></i>
+                        </button>
+                        <button class="item-btn">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="playlist-item">
+                    <div class="item-status">
+                        <i class="fas fa-circle" style="font-size: 8px; color: var(--text-muted);"></i>
+                    </div>
+                    <div class="item-number">9</div>
+                    <div class="item-info">
+                        <div class="item-slug">SPORT_SERIE_A</div>
+                        <div class="item-title">Risultati Serie A</div>
+                    </div>
+                    <div class="item-type" style="background: #00BFA5; color: white;">VO</div>
+                    <div class="item-duration">02:00</div>
+                    <div class="item-controls">
+                        <button class="item-btn">
+                            <i class="fas fa-play"></i>
+                        </button>
+                        <button class="item-btn">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="playlist-item">
+                    <div class="item-status">
+                        <i class="fas fa-circle" style="font-size: 8px; color: var(--text-muted);"></i>
+                    </div>
+                    <div class="item-number">10</div>
+                    <div class="item-info">
+                        <div class="item-slug">METEO_DOMANI</div>
+                        <div class="item-title">Previsioni meteo</div>
+                    </div>
+                    <div class="item-type" style="background: var(--warning); color: white;">GFX</div>
+                    <div class="item-duration">03:00</div>
+                    <div class="item-controls">
+                        <button class="item-btn">
+                            <i class="fas fa-play"></i>
+                        </button>
+                        <button class="item-btn">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Preview Panel -->
+        <div class="preview-panel">
+            <div class="preview-header">
+                <div class="playlist-title">Preview / Program</div>
+            </div>
+
+            <div class="preview-monitor">
+                <div class="preview-content">
+                    <div style="text-align: center;">
+                        <i class="fas fa-video" style="font-size: 48px; margin-bottom: 16px;"></i>
+                        <div>PKG_TERREMOTO_MILANO_V2.mp4</div>
+                        <div style="font-size: 24px; margin-top: 8px;">01:37 / 02:30</div>
+                    </div>
+                </div>
+                <div class="preview-overlay">
+                    <div style="display: flex; justify-content: space-between; color: white;">
+                        <span>ON AIR</span>
+                        <span>TERREMOTO_MILANO</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="preview-info">
+                <div class="info-item">
+                    <span class="info-label">Current Item:</span>
+                    <span class="info-value">5 / 24</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Type:</span>
+                    <span class="info-value">Package (PKG)</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Duration:</span>
+                    <span class="info-value">02:30</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Remaining:</span>
+                    <span class="info-value">00:53</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Next:</span>
+                    <span class="info-value">INTERVISTA_SINDACO (LIVE)</span>
+                </div>
+            </div>
+
+            <div class="settings-section" style="padding: 20px;">
+                <div class="settings-title">Automation Settings</div>
+                <div class="setting-item">
+                    <span>Auto-play next item</span>
+                    <div class="toggle active">
+                        <div class="toggle-handle"></div>
+                    </div>
+                </div>
+                <div class="setting-item">
+                    <span>Skip hold points</span>
+                    <div class="toggle">
+                        <div class="toggle-handle"></div>
+                    </div>
+                </div>
+                <div class="setting-item">
+                    <span>Auto-cue graphics</span>
+                    <div class="toggle active">
+                        <div class="toggle-handle"></div>
+                    </div>
+                </div>
+                <div class="setting-item">
+                    <span>Emergency bypass</span>
+                    <div class="toggle">
+                        <div class="toggle-handle"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Toggle switches
+        document.querySelectorAll('.toggle').forEach(toggle => {
+            toggle.addEventListener('click', function() {
+                this.classList.toggle('active');
+            });
+        });
+
+        // Playlist item click
+        document.querySelectorAll('.playlist-item').forEach(item => {
+            item.addEventListener('click', function() {
+                console.log('Item clicked:', this.querySelector('.item-slug').textContent);
+            });
+        });
+
+        // Simulate playback progress
+        let progress = 65;
+        setInterval(() => {
+            const playingItem = document.querySelector('.playlist-item.playing');
+            if (playingItem) {
+                const progressFill = playingItem.querySelector('.progress-fill');
+                const progressMarker = playingItem.querySelector('.progress-marker');
+                if (progressFill && progress < 100) {
+                    progress += 0.5;
+                    progressFill.style.width = progress + '%';
+                    progressMarker.style.left = progress + '%';
+                }
+            }
+        }, 500);
+
+        console.log('Automation Playlist loaded successfully');
+    </script>
+</body>
+</html>

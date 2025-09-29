@@ -1,0 +1,592 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Story → Rundown Integration Demo</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+    <style>
+        :root {
+            --primary: #2563EB;
+            --success: #10B981;
+            --warning: #F59E0B;
+            --danger: #EF4444;
+            --bg-app: #0F172A;
+            --bg-surface: #1E293B;
+            --bg-elevated: #334155;
+            --text-primary: #F8FAFC;
+            --text-secondary: #CBD5E1;
+            --text-muted: #94A3B8;
+            --border-primary: #334155;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg-app);
+            color: var(--text-primary);
+            padding: 20px;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .demo-section {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-primary);
+            border-radius: 16px;
+            padding: 24px;
+            margin-bottom: 24px;
+        }
+
+        .section-title {
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .flow-steps {
+            display: grid;
+            grid-template-columns: 1fr auto 1fr auto 1fr;
+            gap: 20px;
+            align-items: center;
+            margin: 24px 0;
+        }
+
+        .flow-step {
+            background: var(--bg-elevated);
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+        }
+
+        .flow-arrow {
+            font-size: 24px;
+            color: var(--primary);
+        }
+
+        .code-block {
+            background: var(--bg-app);
+            border: 1px solid var(--border-primary);
+            border-radius: 8px;
+            padding: 16px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 13px;
+            margin: 12px 0;
+            overflow-x: auto;
+        }
+
+        .json-key {
+            color: #60A5FA;
+        }
+
+        .json-string {
+            color: #34D399;
+        }
+
+        .json-number {
+            color: #FBBF24;
+        }
+
+        .transformation-example {
+            display: grid;
+            grid-template-columns: 1fr auto 1fr;
+            gap: 20px;
+            align-items: start;
+        }
+
+        .before,
+        .after {
+            background: var(--bg-elevated);
+            padding: 16px;
+            border-radius: 8px;
+        }
+
+        .transform-icon {
+            font-size: 32px;
+            color: var(--primary);
+            align-self: center;
+            text-align: center;
+        }
+
+        .automation-command {
+            background: var(--bg-app);
+            border-left: 4px solid var(--primary);
+            padding: 12px 16px;
+            margin: 8px 0;
+            border-radius: 4px;
+        }
+
+        .command-type {
+            font-weight: 600;
+            color: var(--primary);
+            font-size: 12px;
+            text-transform: uppercase;
+        }
+
+        .command-details {
+            margin-top: 4px;
+            font-size: 13px;
+        }
+
+        .caspar-command {
+            background: var(--bg-elevated);
+            border-left: 4px solid var(--success);
+            padding: 10px 12px;
+            margin: 4px 0;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12px;
+        }
+
+        .timing-info {
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-top: 8px;
+        }
+
+        .demo-button {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            margin: 8px 8px 8px 0;
+            transition: all 0.2s;
+        }
+
+        .demo-button:hover {
+            opacity: 0.9;
+            transform: translateY(-1px);
+        }
+
+        .status-badge {
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .status-pending {
+            background: var(--warning);
+            color: white;
+        }
+
+        .status-ready {
+            background: var(--success);
+            color: white;
+        }
+
+        .status-error {
+            background: var(--danger);
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 style="font-size: 28px; font-weight: 800; margin-bottom: 32px; text-align: center;">
+            <i class="fas fa-route"></i>
+            Story → Rundown Integration Demo
+        </h1>
+
+        <!-- Workflow Overview -->
+        <div class="demo-section">
+            <div class="section-title">
+                <i class="fas fa-workflow"></i>
+                Workflow Overview
+            </div>
+
+            <div class="flow-steps">
+                <div class="flow-step">
+                    <i class="fas fa-edit" style="font-size: 24px; color: var(--primary); margin-bottom: 8px;"></i>
+                    <h4>Story Editor</h4>
+                    <p style="font-size: 12px; color: var(--text-muted);">Giornalista scrive script + media</p>
+                </div>
+
+                <div class="flow-arrow">
+                    <i class="fas fa-arrow-right"></i>
+                </div>
+
+                <div class="flow-step">
+                    <i class="fas fa-cogs" style="font-size: 24px; color: var(--warning); margin-bottom: 8px;"></i>
+                    <h4>Parser Engine</h4>
+                    <p style="font-size: 12px; color: var(--text-muted);">Analizza script e comandi</p>
+                </div>
+
+                <div class="flow-arrow">
+                    <i class="fas fa-arrow-right"></i>
+                </div>
+
+                <div class="flow-step">
+                    <i class="fas fa-list" style="font-size: 24px; color: var(--success); margin-bottom: 8px;"></i>
+                    <h4>Automation Rundown</h4>
+                    <p style="font-size: 12px; color: var(--text-muted);">Comandi pronti per play</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Script Parsing Example -->
+        <div class="demo-section">
+            <div class="section-title">
+                <i class="fas fa-code"></i>
+                Script Parsing - Da Testo a Comandi
+            </div>
+
+            <div class="transformation-example">
+                <div class="before">
+                    <h4 style="margin-bottom: 12px;">📝 Script Originale</h4>
+                    <div class="code-block">BUONASERA. INIZIAMO CON UNA NOTIZIA DI ULTIMA ORA.
+
+UN TERREMOTO DI MAGNITUDO 4.2 HA COLPITO MILANO.
+
+((TAKE VTR - "PKG_TERREMOTO_MILANO_V2.mp4" - 02:30))
+
+PAURA QUESTA MATTINA A MILANO.
+
+((GFX ON - "Mappa Epicentro"))
+L'EPICENTRO È STATO REGISTRATO NELLA ZONA DI SAN SIRO.
+((GFX OFF))
+
+((SOT UP - "SOT_SINDACO_SALA.wav" - 00:15))
+"ABBIAMO ATTIVATO I PROTOCOLLI DI EMERGENZA."
+((SOT UNDER))
+
+LA SITUAZIONE ORA È SOTTO CONTROLLO.</div>
+                </div>
+
+                <div class="transform-icon">
+                    <i class="fas fa-exchange-alt"></i>
+                </div>
+
+                <div class="after">
+                    <h4 style="margin-bottom: 12px;">⚙️ Comandi Automazione</h4>
+
+                    <div class="automation-command">
+                        <div class="command-type">PRESENTER CUE</div>
+                        <div class="command-details">BUONASERA. INIZIAMO CON UNA NOTIZIA DI ULTIMA ORA...</div>
+                        <div class="timing-info">
+                            <span>Start: 00:00</span>
+                            <span>Duration: 00:15</span>
+                        </div>
+                    </div>
+
+                    <div class="automation-command">
+                        <div class="command-type">TAKE VTR</div>
+                        <div class="command-details">File: PKG_TERREMOTO_MILANO_V2.mp4</div>
+                        <div class="timing-info">
+                            <span>Start: 00:15</span>
+                            <span>Duration: 02:30</span>
+                        </div>
+                    </div>
+
+                    <div class="automation-command">
+                        <div class="command-type">GFX ON</div>
+                        <div class="command-details">Template: Mappa Epicentro</div>
+                        <div class="timing-info">
+                            <span>Start: 02:45</span>
+                            <span>Duration: 00:10</span>
+                        </div>
+                    </div>
+
+                    <div class="automation-command">
+                        <div class="command-type">AUDIO MIX</div>
+                        <div class="command-details">SOT: SOT_SINDACO_SALA.wav</div>
+                        <div class="timing-info">
+                            <span>Start: 02:55</span>
+                            <span>Duration: 00:15</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- JSON Data Structure -->
+        <div class="demo-section">
+            <div class="section-title">
+                <i class="fas fa-database"></i>
+                Struttura Dati JSON per Rundown
+            </div>
+
+            <div class="code-block" style="max-height: 400px; overflow-y: auto;">
+<span class="json-key">{</span>
+  <span class="json-key">"storyId"</span>: <span class="json-string">"TERREMOTO_MILANO_001"</span>,
+  <span class="json-key">"slug"</span>: <span class="json-string">"TERREMOTO_MILANO"</span>,
+  <span class="json-key">"title"</span>: <span class="json-string">"Terremoto magnitudo 4.2 a Milano"</span>,
+  <span class="json-key">"type"</span>: <span class="json-string">"PKG"</span>,
+  <span class="json-key">"presenter"</span>: <span class="json-string">"Mario Rossi"</span>,
+  <span class="json-key">"estimatedDuration"</span>: <span class="json-number">180</span>,
+  <span class="json-key">"status"</span>: <span class="json-string">"ready"</span>,
+  <span class="json-key">"automationCommands"</span>: [
+    {
+      <span class="json-key">"id"</span>: <span class="json-number">1</span>,
+      <span class="json-key">"type"</span>: <span class="json-string">"PRESENTER_CUE"</span>,
+      <span class="json-key">"startTime"</span>: <span class="json-number">0</span>,
+      <span class="json-key">"duration"</span>: <span class="json-number">15</span>,
+      <span class="json-key">"content"</span>: <span class="json-string">"BUONASERA. INIZIAMO CON UNA NOTIZIA DI ULTIMA ORA..."</span>,
+      <span class="json-key">"teleprompter"</span>: <span class="json-string">true</span>
+    },
+    {
+      <span class="json-key">"id"</span>: <span class="json-number">2</span>,
+      <span class="json-key">"type"</span>: <span class="json-string">"TAKE_VTR"</span>,
+      <span class="json-key">"startTime"</span>: <span class="json-number">15</span>,
+      <span class="json-key">"duration"</span>: <span class="json-number">150</span>,
+      <span class="json-key">"mediaFile"</span>: <span class="json-string">"PKG_TERREMOTO_MILANO_V2.mp4"</span>,
+      <span class="json-key">"casparCommand"</span>: <span class="json-string">"PLAY 1-1 PKG_TERREMOTO_MILANO_V2"</span>,
+      <span class="json-key">"autoNext"</span>: <span class="json-string">true</span>
+    },
+    {
+      <span class="json-key">"id"</span>: <span class="json-number">3</span>,
+      <span class="json-key">"type"</span>: <span class="json-string">"GFX_ON"</span>,
+      <span class="json-key">"startTime"</span>: <span class="json-number">165</span>,
+      <span class="json-key">"duration"</span>: <span class="json-number">10</span>,
+      <span class="json-key">"template"</span>: <span class="json-string">"Mappa Epicentro"</span>,
+      <span class="json-key">"casparCommand"</span>: <span class="json-string">"CG 1-2 ADD 1 spx-gc/template-mappa"</span>,
+      <span class="json-key">"data"</span>: {
+        <span class="json-key">"title"</span>: <span class="json-string">"EPICENTRO TERREMOTO"</span>,
+        <span class="json-key">"location"</span>: <span class="json-string">"Milano - San Siro"</span>
+      }
+    },
+    {
+      <span class="json-key">"id"</span>: <span class="json-number">4</span>,
+      <span class="json-key">"type"</span>: <span class="json-string">"AUDIO_SOT"</span>,
+      <span class="json-key">"startTime"</span>: <span class="json-number">175</span>,
+      <span class="json-key">"duration"</span>: <span class="json-number">15</span>,
+      <span class="json-key">"audioFile"</span>: <span class="json-string">"SOT_SINDACO_SALA.wav"</span>,
+      <span class="json-key">"level"</span>: <span class="json-string">"UP"</span>,
+      <span class="json-key">"casparCommand"</span>: <span class="json-string">"MIXER 1-1 VOLUME 1.0"</span>
+    }
+  ],
+  <span class="json-key">"metadata"</span>: {
+    <span class="json-key">"createdAt"</span>: <span class="json-string">"2024-01-15T14:30:00Z"</span>,
+    <span class="json-key">"lastModified"</span>: <span class="json-string">"2024-01-15T15:45:00Z"</span>,
+    <span class="json-key">"approvedBy"</span>: <span class="json-string">"Paolo Neri"</span>,
+    <span class="json-key">"rundownId"</span>: <span class="json-string">"TG_20_2024_01_15"</span>,
+    <span class="json-key">"position"</span>: <span class="json-number">3</span>
+  }
+<span class="json-key">}</span>
+            </div>
+        </div>
+
+        <!-- CasparCG Integration -->
+        <div class="demo-section">
+            <div class="section-title">
+                <i class="fas fa-server"></i>
+                Comandi CasparCG Generati
+            </div>
+
+            <p style="margin-bottom: 16px; color: var(--text-secondary);">
+                Il sistema traduce automaticamente ogni comando in istruzioni CasparCG specifiche:
+            </p>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                <div>
+                    <h4 style="margin-bottom: 12px;">📹 Video Commands</h4>
+                    <div class="caspar-command">PLAY 1-1 PKG_TERREMOTO_MILANO_V2</div>
+                    <div class="caspar-command">STOP 1-1</div>
+                    <div class="caspar-command">LOAD 1-1 NEXT_VIDEO AUTO</div>
+                </div>
+
+                <div>
+                    <h4 style="margin-bottom: 12px;">🎨 Graphics Commands</h4>
+                    <div class="caspar-command">CG 1-2 ADD 1 spx-gc/mappa-epicentro</div>
+                    <div class="caspar-command">CG 1-2 UPDATE 1 {"title":"EPICENTRO"}</div>
+                    <div class="caspar-command">CG 1-2 REMOVE 1</div>
+                </div>
+
+                <div>
+                    <h4 style="margin-bottom: 12px;">🔊 Audio Commands</h4>
+                    <div class="caspar-command">MIXER 1-1 VOLUME 1.0</div>
+                    <div class="caspar-command">MIXER 1-1 VOLUME 0.3 25 linear</div>
+                    <div class="caspar-command">PLAY 1-3 SOT_SINDACO_SALA</div>
+                </div>
+
+                <div>
+                    <h4 style="margin-bottom: 12px;">⏱️ Timing Commands</h4>
+                    <div class="caspar-command">INFO 1-1</div>
+                    <div class="caspar-command">CALL 1-1</div>
+                    <div class="caspar-command">VERSION</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Demo Buttons -->
+        <div class="demo-section">
+            <div class="section-title">
+                <i class="fas fa-play"></i>
+                Demo Interattivo
+            </div>
+
+            <p style="margin-bottom: 16px; color: var(--text-secondary);">
+                Simula il processo di invio di una storia al rundown:
+            </p>
+
+            <button class="demo-button" onclick="parseStory()">
+                <i class="fas fa-code"></i>
+                1. Analizza Script
+            </button>
+
+            <button class="demo-button" onclick="generateCommands()">
+                <i class="fas fa-cogs"></i>
+                2. Genera Comandi
+            </button>
+
+            <button class="demo-button" onclick="sendToRundown()">
+                <i class="fas fa-paper-plane"></i>
+                3. Invia a Rundown
+            </button>
+
+            <button class="demo-button" onclick="testCaspar()">
+                <i class="fas fa-server"></i>
+                4. Test CasparCG
+            </button>
+
+            <div id="demo-status" style="margin-top: 16px; padding: 12px; background: var(--bg-elevated); border-radius: 8px; display: none;">
+                <div id="status-text"></div>
+                <div id="status-details" style="font-size: 12px; color: var(--text-muted); margin-top: 4px;"></div>
+            </div>
+        </div>
+
+        <!-- Integration Points -->
+        <div class="demo-section">
+            <div class="section-title">
+                <i class="fas fa-plug"></i>
+                Punti di Integrazione Sistema
+            </div>
+
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px;">
+                <div style="background: var(--bg-elevated); padding: 16px; border-radius: 8px;">
+                    <h4 style="margin-bottom: 8px;">📡 Supabase Database</h4>
+                    <p style="font-size: 13px; color: var(--text-secondary);">
+                        Real-time sync tra Story Editor e Rundown. Notifiche push per updates.
+                    </p>
+                    <div style="margin-top: 8px; font-size: 11px; color: var(--text-muted);">
+                        stories → rundown_items → automation_commands
+                    </div>
+                </div>
+
+                <div style="background: var(--bg-elevated); padding: 16px; border-radius: 8px;">
+                    <h4 style="margin-bottom: 8px;">🎬 CasparCG Server</h4>
+                    <p style="font-size: 13px; color: var(--text-secondary);">
+                        Controllo video/grafica. IP: 100.74.188.128:5250
+                    </p>
+                    <div style="margin-top: 8px; font-size: 11px; color: var(--text-muted);">
+                        WebSocket + AMCP Protocol
+                    </div>
+                </div>
+
+                <div style="background: var(--bg-elevated); padding: 16px; border-radius: 8px;">
+                    <h4 style="margin-bottom: 8px;">🎨 SPX-GC Templates</h4>
+                    <p style="font-size: 13px; color: var(--text-secondary);">
+                        Template grafici compatibili. Configurazione automatica dati.
+                    </p>
+                    <div style="margin-top: 8px; font-size: 11px; color: var(--text-muted);">
+                        REST API + JSON data binding
+                    </div>
+                </div>
+
+                <div style="background: var(--bg-elevated); padding: 16px; border-radius: 8px;">
+                    <h4 style="margin-bottom: 8px;">⚡ WebSocket Live</h4>
+                    <p style="font-size: 13px; color: var(--text-secondary);">
+                        Updates real-time per tutti i client connessi. Status sync.
+                    </p>
+                    <div style="margin-top: 8px; font-size: 11px; color: var(--text-muted);">
+                        Broadcast events + state management
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let demoStep = 0;
+        const demoStatus = document.getElementById('demo-status');
+        const statusText = document.getElementById('status-text');
+        const statusDetails = document.getElementById('status-details');
+
+        function showStatus(text, details, type = 'info') {
+            demoStatus.style.display = 'block';
+            statusText.innerHTML = `<span class="status-badge status-${type === 'success' ? 'ready' : type === 'error' ? 'error' : 'pending'}">${type.toUpperCase()}</span> ${text}`;
+            statusDetails.textContent = details;
+        }
+
+        function parseStory() {
+            showStatus('Parsing script...', 'Analizzando comandi ((TAKE VTR)), ((GFX ON/OFF)), ((SOT UP/UNDER))', 'pending');
+
+            setTimeout(() => {
+                showStatus('Script parsed successfully!', 'Trovati: 1 VTR, 1 GFX, 1 SOT. Durata stimata: 03:10', 'success');
+                demoStep = 1;
+            }, 1500);
+        }
+
+        function generateCommands() {
+            if (demoStep < 1) {
+                showStatus('Error: Parse script first', 'Devi prima analizzare lo script', 'error');
+                return;
+            }
+
+            showStatus('Generating automation commands...', 'Creando comandi CasparCG e timing sequenza', 'pending');
+
+            setTimeout(() => {
+                showStatus('Commands generated!', '4 comandi creati: PRESENTER_CUE, TAKE_VTR, GFX_ON, AUDIO_SOT', 'success');
+                demoStep = 2;
+            }, 2000);
+        }
+
+        function sendToRundown() {
+            if (demoStep < 2) {
+                showStatus('Error: Generate commands first', 'Devi prima generare i comandi di automazione', 'error');
+                return;
+            }
+
+            showStatus('Sending to rundown...', 'Inserendo nella playlist automazione. Position: #3 nel rundown TG delle 20', 'pending');
+
+            setTimeout(() => {
+                showStatus('Story sent to rundown!', 'TERREMOTO_MILANO aggiunto alla posizione #3. Ready per automazione.', 'success');
+                demoStep = 3;
+            }, 1800);
+        }
+
+        function testCaspar() {
+            if (demoStep < 3) {
+                showStatus('Error: Send to rundown first', 'La storia deve essere nel rundown prima del test', 'error');
+                return;
+            }
+
+            showStatus('Testing CasparCG connection...', 'Connecting to 100.74.188.128:5250 - Testing AMCP commands', 'pending');
+
+            setTimeout(() => {
+                showStatus('CasparCG test successful!', 'Server online. Video/Graphics channels ready. Automation commands validated.', 'success');
+            }, 2500);
+        }
+
+        // Auto-demo per mostrare il flusso completo
+        function runAutoDemo() {
+            setTimeout(() => parseStory(), 500);
+            setTimeout(() => generateCommands(), 3000);
+            setTimeout(() => sendToRundown(), 6500);
+            setTimeout(() => testCaspar(), 9000);
+        }
+
+        // Uncomment per demo automatica al caricamento
+        // runAutoDemo();
+    </script>
+</body>
+</html>
