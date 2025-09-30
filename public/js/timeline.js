@@ -491,8 +491,8 @@ class TimelineBuilder {
             const leftPercent = (newLeft / trackRect.width) * 100;
             this.selectedItem.style.left = `${leftPercent}%`;
 
-            // Show precision playhead during drag
-            this.updateDragPlayhead(track, e.clientX - this.dragOffset + (this.selectedItem.offsetWidth / 2));
+            // Show precision playhead at item START position
+            this.updateDragPlayhead(track, trackRect.left + newLeft);
 
         } else if (this.isResizing && this.selectedItem && this.resizeHandle) {
             const track = this.selectedItem.parentElement;
