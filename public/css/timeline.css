@@ -623,10 +623,7 @@ button, .timeline-item, .track-content {
 }
 
 .timeline-drag-tooltip {
-    position: absolute;
-    top: -35px;
-    left: 50%;
-    transform: translateX(-50%);
+    position: fixed;
     background: #ef4444;
     color: white;
     padding: 6px 12px;
@@ -638,6 +635,8 @@ button, .timeline-item, .track-content {
     pointer-events: none;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
     z-index: 10000;
+    opacity: 0;
+    transition: opacity 0.1s;
 }
 
 .timeline-drag-tooltip::after {

@@ -132,9 +132,19 @@ class TimelineBuilder {
         const leftPercent = (clampedTime / this.totalDuration) * 100;
         playhead.style.left = `${leftPercent}%`;
 
-        // Update tooltip text
+        // Update tooltip position using fixed positioning (relative to viewport)
         if (tooltip) {
             tooltip.textContent = this.formatTime(clampedTime);
+
+            // Get playhead position in viewport
+            const playheadRect = playhead.getBoundingClientRect();
+            const playheadCenterX = playheadRect.left + (playheadRect.width / 2);
+
+            // Position tooltip above playhead
+            tooltip.style.left = `${playheadCenterX}px`;
+            tooltip.style.top = `${trackRect.top - 35}px`;
+            tooltip.style.transform = 'translateX(-50%)';
+            tooltip.style.opacity = '1';
         }
 
         // Show indicator
@@ -145,10 +155,16 @@ class TimelineBuilder {
      * Hide playhead indicator
      */
     hideDragPlayhead() {
-        // Hide all playheads
+        // Hide all playheads and tooltips
         const playheads = document.querySelectorAll('.timeline-drag-playhead');
         playheads.forEach(playhead => {
             playhead.classList.remove('active');
+
+            // Hide tooltip
+            const tooltip = playhead.querySelector('.timeline-drag-tooltip');
+            if (tooltip) {
+                tooltip.style.opacity = '0';
+            }
         });
     }
 
