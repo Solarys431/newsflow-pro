@@ -36,7 +36,25 @@ class TimelineBuilder {
     }
 
     /**
-     * Setup timecode ruler with markers every 5 seconds
+     * Calculate adaptive timeframe step based on total duration
+     */
+    calculateTimeframeStep(duration) {
+        // Adaptive timeframe scaling
+        if (duration <= 30) {
+            return { step: 1, majorEvery: 5 };      // 0-30s: ogni 1s (major ogni 5s)
+        } else if (duration <= 120) {
+            return { step: 5, majorEvery: 2 };      // 30s-2min: ogni 5s (major ogni 10s)
+        } else if (duration <= 600) {
+            return { step: 10, majorEvery: 3 };     // 2-10min: ogni 10s (major ogni 30s)
+        } else if (duration <= 1800) {
+            return { step: 30, majorEvery: 4 };     // 10-30min: ogni 30s (major ogni 2min)
+        } else {
+            return { step: 60, majorEvery: 5 };     // 30min+: ogni 1min (major ogni 5min)
+        }
+    }
+
+    /**
+     * Setup timecode ruler with adaptive markers based on duration
      */
     setupTimecodeRuler() {
         const ruler = document.getElementById('timeline-ruler');
@@ -44,13 +62,14 @@ class TimelineBuilder {
 
         ruler.innerHTML = '';
 
-        const stepSeconds = 5;
-        const steps = Math.ceil(this.totalDuration / stepSeconds);
+        // Get adaptive timeframe
+        const { step, majorEvery } = this.calculateTimeframeStep(this.totalDuration);
+        const steps = Math.ceil(this.totalDuration / step);
 
         for (let i = 0; i <= steps; i++) {
-            const seconds = i * stepSeconds;
+            const seconds = i * step;
             const percent = (seconds / this.totalDuration) * 100;
-            const isMajor = (i % 2 === 0); // Major marker ogni 10 secondi
+            const isMajor = (i % majorEvery === 0); // Major marker based on duration
 
             const marker = document.createElement('div');
             marker.className = `timecode-marker ${isMajor ? 'major' : ''}`;
@@ -63,6 +82,8 @@ class TimelineBuilder {
 
             ruler.appendChild(marker);
         }
+
+        console.log(`[TIMELINE] Timecode step: ${step}s, major every: ${majorEvery * step}s, duration: ${this.totalDuration}s`);
     }
 
     /**
