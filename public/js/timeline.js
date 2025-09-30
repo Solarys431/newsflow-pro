@@ -191,7 +191,7 @@ class TimelineBuilder {
                     const startTime = Math.floor(dropX / this.pixelsPerSecond / this.zoomLevel);
 
                     // Add item to timeline
-                    this.addTimelineItem({
+                    const itemData = {
                         id: `item-${Date.now()}`,
                         assetId: data.assetId,
                         type: data.type,
@@ -200,7 +200,14 @@ class TimelineBuilder {
                         start: Math.max(0, startTime),
                         duration: data.duration || 5,
                         track: trackName
-                    });
+                    };
+
+                    // For text items, include text content
+                    if (data.type === 'text' && data.text) {
+                        itemData.text = data.text;
+                    }
+
+                    this.addTimelineItem(itemData);
 
                     console.log('[TIMELINE] Item dropped successfully:', data.originalFilename);
 
@@ -303,6 +310,32 @@ class TimelineBuilder {
      * Setup interactions for timeline item (select, drag, resize, delete)
      */
     setupItemInteractions(item) {
+        // Double-click to edit text items
+        item.addEventListener('dblclick', (e) => {
+            e.stopPropagation();
+            const itemType = item.dataset.type;
+
+            if (itemType === 'text') {
+                // Find the text item data in the timeline
+                const itemId = item.dataset.id;
+                const itemData = this.items.find(i => i.id === itemId);
+
+                if (itemData && itemData.text) {
+                    // Find corresponding text item in app
+                    const app = window.app;
+                    if (app) {
+                        // Create a temporary text item object for editing
+                        const textItem = {
+                            id: itemId,
+                            text: itemData.text,
+                            duration: itemData.duration
+                        };
+                        app.showAddTextModal(textItem);
+                    }
+                }
+            }
+        });
+
         // Select item
         item.addEventListener('mousedown', (e) => {
             // Ignore if clicking delete or resize handles

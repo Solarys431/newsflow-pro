@@ -15,6 +15,7 @@ class iNEWSApp {
         this.stories = [];
         this.rundownItems = [];
         this.mediaAssets = [];
+        this.textItems = []; // Text voiceover items for timeline
 
         // Timeline Builder
         this.timelineBuilder = null;
@@ -464,6 +465,16 @@ class iNEWSApp {
                 metadata.timeline.items.forEach(itemData => {
                     this.timelineBuilder.addTimelineItem(itemData);
                 });
+            }
+
+            // Load sidebar text items
+            if (metadata.textItems && metadata.textItems.length > 0) {
+                this.textItems = metadata.textItems;
+                this.renderTextItems();
+                console.log('[DISPLAY] Loaded', this.textItems.length, 'text items from sidebar');
+            } else {
+                this.textItems = [];
+                this.renderTextItems();
             }
 
             // Switch to timeline mode
@@ -1040,6 +1051,232 @@ class iNEWSApp {
     }
 
     /**
+     * TEXT ITEMS MANAGEMENT (for Timeline Text Track)
+     */
+    showAddTextModal(editItem = null) {
+        const isEdit = editItem !== null;
+        const title = isEdit ? 'Modifica Testo Voiceover' : 'Nuovo Testo Voiceover';
+        const buttonLabel = isEdit ? 'Aggiorna' : 'Crea';
+
+        const defaultText = isEdit ? editItem.text : '';
+        const defaultDuration = isEdit ? editItem.duration : 5;
+
+        const modal = document.getElementById('modal-container');
+        modal.innerHTML = `
+            <div class="modal-overlay" onclick="app.closeModal()">
+                <div class="modal-content" onclick="event.stopPropagation()" style="background: var(--bg-primary); border-radius: 12px; padding: 32px; max-width: 600px; width: 90%;">
+                    <h2 style="margin: 0 0 24px 0; color: var(--text-primary);">${title}</h2>
+
+                    <div style="display: flex; flex-direction: column; gap: 16px;">
+                        <div class="form-group">
+                            <label>Testo Voiceover *</label>
+                            <textarea id="text-input" class="form-textarea" placeholder="Inserisci il testo da leggere..." rows="8" style="min-height: 150px;">${defaultText}</textarea>
+                        </div>
+                        <div class="form-group">
+                            <label>Durata (secondi) *</label>
+                            <input type="number" id="text-duration" class="form-input" value="${defaultDuration}" min="1" max="300">
+                        </div>
+                    </div>
+
+                    <div style="display: flex; gap: 12px; margin-top: 24px;">
+                        <button onclick="${isEdit ? `app.updateTextItem('${editItem.id}')` : 'app.createTextItem()'}" style="flex: 1; padding: 12px; background: var(--color-success); border: none; border-radius: 6px; color: white; font-weight: 600; cursor: pointer;">${buttonLabel}</button>
+                        <button onclick="app.closeModal()" style="padding: 12px 24px; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 6px; color: var(--text-primary); cursor: pointer;">Annulla</button>
+                    </div>
+                </div>
+            </div>
+        `;
+        modal.style.display = 'block';
+    }
+
+    createTextItem() {
+        const textInput = document.getElementById('text-input');
+        const durationInput = document.getElementById('text-duration');
+
+        if (!textInput || !durationInput) return;
+
+        const text = textInput.value.trim();
+        const duration = parseInt(durationInput.value);
+
+        if (!text) {
+            this.showNotification('Il testo non può essere vuoto', 'warning');
+            return;
+        }
+
+        if (duration < 1) {
+            this.showNotification('La durata deve essere almeno 1 secondo', 'warning');
+            return;
+        }
+
+        // Create text item
+        const textItem = {
+            id: `text-${Date.now()}`,
+            type: 'text',
+            text: text,
+            duration: duration,
+            filename: `voiceover-${Date.now()}`,
+            originalFilename: text.substring(0, 30) + (text.length > 30 ? '...' : '')
+        };
+
+        this.textItems.push(textItem);
+        this.renderTextItems();
+        this.closeModal();
+        this.showNotification('✅ Testo creato con successo', 'success');
+    }
+
+    updateTextItem(itemId) {
+        const textInput = document.getElementById('text-input');
+        const durationInput = document.getElementById('text-duration');
+
+        if (!textInput || !durationInput) return;
+
+        const text = textInput.value.trim();
+        const duration = parseInt(durationInput.value);
+
+        if (!text) {
+            this.showNotification('Il testo non può essere vuoto', 'warning');
+            return;
+        }
+
+        if (duration < 1) {
+            this.showNotification('La durata deve essere almeno 1 secondo', 'warning');
+            return;
+        }
+
+        // Find and update text item in sidebar list
+        const item = this.textItems.find(t => t.id === itemId);
+        if (item) {
+            item.text = text;
+            item.duration = duration;
+            item.originalFilename = text.substring(0, 30) + (text.length > 30 ? '...' : '');
+            this.renderTextItems();
+        }
+
+        // Update item in timeline if it exists there
+        if (this.timelineBuilder && this.timelineBuilder.items) {
+            const timelineItem = this.timelineBuilder.items.find(i => i.id === itemId);
+            if (timelineItem) {
+                timelineItem.text = text;
+                timelineItem.duration = duration;
+                timelineItem.originalFilename = text.substring(0, 30) + (text.length > 30 ? '...' : '');
+
+                // Update DOM element
+                const domElement = document.querySelector(`.timeline-item[data-id="${itemId}"]`);
+                if (domElement) {
+                    domElement.dataset.duration = duration;
+
+                    // Update displayed name
+                    const nameEl = domElement.querySelector('.item-name');
+                    if (nameEl) nameEl.textContent = timelineItem.originalFilename;
+
+                    // Update duration display
+                    const durationEl = domElement.querySelector('.item-duration');
+                    if (durationEl) durationEl.textContent = this.timelineBuilder.formatTime(duration);
+
+                    // Recalculate width based on new duration
+                    const widthPercent = (duration / this.timelineBuilder.totalDuration) * 100;
+                    domElement.style.width = `${widthPercent}%`;
+                }
+
+                this.timelineBuilder.checkOverlaps();
+                this.timelineBuilder.updateStats();
+            }
+        }
+
+        this.closeModal();
+        this.showNotification('✅ Testo aggiornato', 'success');
+    }
+
+    deleteTextItem(itemId) {
+        if (!confirm('Confermi eliminazione del testo?')) return;
+
+        this.textItems = this.textItems.filter(t => t.id !== itemId);
+        this.renderTextItems();
+        this.showNotification('Testo eliminato', 'success');
+    }
+
+    renderTextItems() {
+        const container = document.getElementById('text-items');
+        if (!container) return;
+
+        if (this.textItems.length === 0) {
+            container.innerHTML = '<div style="padding: 12px; text-align: center; color: #999;">Nessun testo disponibile</div>';
+            return;
+        }
+
+        container.innerHTML = this.textItems.map(item => {
+            const durationText = `${item.duration}s`;
+
+            return `
+                <div class="media-item" data-text-id="${item.id}" onclick="app.selectTextItem('${item.id}')" style="cursor: pointer;">
+                    <button class="btn-delete" onclick="app.deleteTextItem('${item.id}'); event.stopPropagation();" title="Elimina">
+                        <i class="fas fa-times"></i>
+                    </button>
+                    <div class="media-icon text" style="background: var(--color-info);">TXT</div>
+                    <div class="media-info">
+                        <div class="media-name">${item.originalFilename}</div>
+                        <div class="media-specs">${item.text.length} caratteri</div>
+                        <div class="media-duration">${durationText}</div>
+                    </div>
+                </div>
+            `;
+        }).join('');
+
+        // Setup drag & drop for text items
+        this.setupTextItemsDragDrop();
+    }
+
+    selectTextItem(itemId) {
+        // Remove previous selection
+        document.querySelectorAll('.media-item').forEach(item => {
+            item.classList.remove('selected');
+        });
+
+        // Add selection
+        const item = document.querySelector(`.media-item[data-text-id="${itemId}"]`);
+        if (item) {
+            item.classList.add('selected');
+        }
+    }
+
+    setupTextItemsDragDrop() {
+        const textItems = document.querySelectorAll('.media-item[data-text-id]');
+
+        textItems.forEach(item => {
+            const textId = item.dataset.textId;
+            const textItem = this.textItems.find(t => t.id === textId);
+            if (!textItem) return;
+
+            item.draggable = true;
+            item.classList.add('draggable');
+
+            item.addEventListener('dragstart', (e) => {
+                const dragData = {
+                    type: 'text',
+                    filename: textItem.filename,
+                    originalFilename: textItem.originalFilename,
+                    duration: textItem.duration,
+                    text: textItem.text,
+                    textId: textItem.id
+                };
+
+                e.dataTransfer.setData('text/plain', JSON.stringify(dragData));
+                e.dataTransfer.effectAllowed = 'copy';
+                item.style.opacity = '0.5';
+            });
+
+            item.addEventListener('dragend', (e) => {
+                item.style.opacity = '1';
+            });
+
+            // Double-click to edit
+            item.addEventListener('dblclick', (e) => {
+                e.stopPropagation();
+                this.showAddTextModal(textItem);
+            });
+        });
+    }
+
+    /**
      * SCRIPT EDITOR FUNCTIONS
      */
     insertMediaCommand(type) {
@@ -1098,11 +1335,15 @@ class iNEWSApp {
                     )
                 };
 
+                // Save sidebar text items (not yet dropped on timeline)
+                metadata.textItems = this.textItems || [];
+
                 // Auto-generate script from timeline
                 script = this.timelineBuilder.generateScript();
                 this.currentStory.script = script; // Update local reference
 
                 console.log('[SAVE] Timeline items saved:', metadata.timeline.items.length);
+                console.log('[SAVE] Text items saved:', metadata.textItems.length);
                 console.log('[SAVE] Generated script:', script);
             }
 
@@ -1510,12 +1751,14 @@ class iNEWSApp {
         const btnInsertVideo = document.getElementById('btn-insert-video');
         const btnInsertAudio = document.getElementById('btn-insert-audio');
         const btnInsertGraphic = document.getElementById('btn-insert-graphic');
+        const btnAddText = document.getElementById('btn-add-text');
         const btnSaveStory = document.getElementById('btn-save-story');
         const btnSendToRundown = document.getElementById('btn-send-to-rundown');
 
         if (btnInsertVideo) btnInsertVideo.addEventListener('click', () => this.insertMediaCommand('video'));
         if (btnInsertAudio) btnInsertAudio.addEventListener('click', () => this.insertMediaCommand('audio'));
         if (btnInsertGraphic) btnInsertGraphic.addEventListener('click', () => this.insertMediaCommand('graphic'));
+        if (btnAddText) btnAddText.addEventListener('click', () => this.showAddTextModal());
         if (btnSaveStory) btnSaveStory.addEventListener('click', () => this.saveStory());
         if (btnSendToRundown) btnSendToRundown.addEventListener('click', () => this.sendStoryToRundownModal());
 
