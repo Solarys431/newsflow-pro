@@ -24,6 +24,13 @@ function parseScriptToCommands(script) {
         if (trimmedLine.startsWith('((') && trimmedLine.endsWith('))')) {
             // If we have accumulated text, create a presenter cue
             if (textBuffer.trim()) {
+                // IMPORTANT: Close any open video context first!
+                // This ensures currentTime is at the end of previous video
+                if (videoContext) {
+                    currentTime = videoContext.endTime;
+                    videoContext = null;
+                }
+
                 commands.push({
                     type: 'PRESENTER_CUE',
                     start_time: currentTime,
@@ -40,6 +47,11 @@ function parseScriptToCommands(script) {
             if (command) {
                 // Handle TAKE VTR - starts a potential video context
                 if (command.type === 'TAKE_VTR') {
+                    // If we were in video context, close it first
+                    if (videoContext) {
+                        currentTime = videoContext.endTime;
+                    }
+
                     videoContext = {
                         startTime: currentTime,
                         duration: command.duration,
@@ -174,7 +186,11 @@ function parseAutomationCommand(commandLine, startTime) {
             };
 
         case 'GFX ON':
-            const templateName = parts[1] ? parts[1].replace(/"/g, '') : '';
+            let templateName = parts[1] ? parts[1].replace(/"/g, '') : '';
+            // Ensure .html extension
+            if (templateName && !templateName.endsWith('.html')) {
+                templateName += '.html';
+            }
             return {
                 type: 'GFX_ON',
                 start_time: startTime,

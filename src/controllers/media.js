@@ -9,6 +9,7 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs-extra');
 const { v4: uuidv4 } = require('uuid');
+const ffmpeg = require('fluent-ffmpeg');
 const DatabaseService = require('../services/DatabaseService');
 const WebSocketService = require('../services/WebSocketService');
 const FTPService = require('../services/FTPService');
@@ -74,6 +75,18 @@ router.post('/upload', upload.single('file'), asyncHandler(async (req, res) => {
         caspar_path: req.file.filename,
         uploaded_by: req.body.uploaded_by || 'System'
     };
+
+    // Extract video metadata if video file
+    if (fileType === 'video') {
+        try {
+            const metadata = await getVideoMetadata(req.file.path);
+            mediaAsset.duration = metadata.duration;
+            mediaAsset.resolution = metadata.resolution;
+            Logger.info('MEDIA', `Video metadata extracted: ${metadata.duration}s, ${metadata.resolution}`);
+        } catch (error) {
+            Logger.warn('MEDIA', `Failed to extract metadata: ${error.message}`);
+        }
+    }
 
     const asset = await DatabaseService.createMediaAsset(mediaAsset);
 
@@ -142,15 +155,31 @@ router.delete('/:id', asyncHandler(async (req, res) => {
         throw new AppError('Media asset not found', 404);
     }
 
-    // Delete file from disk
+    // Check if file is stored remotely on CasparCG
+    const isRemote = asset.metadata && asset.metadata.location === 'remote';
+
+    // Delete file from CasparCG via FTP if remote
+    if (isRemote && config.ftp.enabled) {
+        try {
+            Logger.info('MEDIA', `Deleting remote file from CasparCG: ${asset.filename}`);
+            await FTPService.deleteRemoteFile(asset.filename);
+            Logger.info('MEDIA', `✅ Remote file deleted from CasparCG: ${asset.filename}`);
+        } catch (error) {
+            Logger.error('MEDIA', `Failed to delete remote file: ${error.message}`);
+            // Continue with database deletion even if FTP delete fails
+        }
+    }
+
+    // Delete file from local disk if exists
     if (asset.file_path && await fs.pathExists(asset.file_path)) {
         await fs.remove(asset.file_path);
+        Logger.info('MEDIA', `Local file deleted: ${asset.file_path}`);
     }
 
     // Delete from database
     await DatabaseService.deleteMediaAsset(req.params.id);
 
-    Logger.info('MEDIA', `File deleted: ${asset.original_filename}`);
+    Logger.info('MEDIA', `Media asset deleted: ${asset.original_filename}`);
 
     WebSocketService.broadcast({
         type: 'media_deleted',
@@ -161,6 +190,7 @@ router.delete('/:id', asyncHandler(async (req, res) => {
     res.json({
         success: true,
         message: 'Media asset deleted successfully',
+        deleted_from_caspar: isRemote,
         deleted_asset: asset
     });
 }));
@@ -232,6 +262,18 @@ router.post('/upload-to-caspar', upload.single('file'), asyncHandler(async (req,
                 upload_date: new Date().toISOString()
             }
         };
+
+        // Extract video metadata if video file (before cleanup)
+        if (fileType === 'video') {
+            try {
+                const metadata = await getVideoMetadata(req.file.path);
+                mediaAsset.duration = metadata.duration;
+                mediaAsset.resolution = metadata.resolution;
+                Logger.info('MEDIA', `Video metadata extracted: ${metadata.duration}s, ${metadata.resolution}`);
+            } catch (error) {
+                Logger.warn('MEDIA', `Failed to extract metadata: ${error.message}`);
+            }
+        }
 
         const asset = await DatabaseService.createMediaAsset(mediaAsset);
 
@@ -445,6 +487,80 @@ router.delete('/ftp/:filename', asyncHandler(async (req, res) => {
         throw new AppError(`Failed to delete file: ${error.message}`, 500);
     }
 }));
+
+// GET /api/media/stream/:filename - Stream video from CasparCG via FTP
+router.get('/stream/:filename', asyncHandler(async (req, res) => {
+    const { filename } = req.params;
+
+    try {
+        // Verifica se il file esiste localmente
+        const localPath = path.join(config.media.uploadPath, filename);
+        const existsLocally = await fs.pathExists(localPath);
+
+        if (existsLocally) {
+            // Serve il file locale
+            Logger.info('MEDIA', `Streaming local file: ${filename}`);
+            res.sendFile(path.resolve(localPath));
+        } else {
+            // Scarica da CasparCG via FTP e streamma
+            Logger.info('MEDIA', `Streaming from CasparCG via FTP: ${filename}`);
+
+            if (!config.ftp.enabled) {
+                throw new AppError('FTP is not configured', 503);
+            }
+
+            // Imposta headers appropriati
+            const ext = path.extname(filename).toLowerCase();
+            let contentType = 'application/octet-stream';
+
+            if (ext === '.mp4') contentType = 'video/mp4';
+            else if (ext === '.mov') contentType = 'video/quicktime';
+            else if (ext === '.avi') contentType = 'video/x-msvideo';
+            else if (ext === '.mkv') contentType = 'video/x-matroska';
+            else if (ext === '.wav') contentType = 'audio/wav';
+            else if (ext === '.mp3') contentType = 'audio/mpeg';
+
+            res.setHeader('Content-Type', contentType);
+            res.setHeader('Accept-Ranges', 'bytes');
+            res.setHeader('Content-Disposition', `inline; filename="${filename}"`);
+
+            // Streamma direttamente dalla connessione FTP alla risposta HTTP
+            await FTPService.downloadFile(filename, res);
+        }
+    } catch (error) {
+        Logger.error('MEDIA', `Streaming error: ${error.message}`, { filename });
+
+        if (!res.headersSent) {
+            res.status(404).json({
+                error: 'File not found',
+                message: error.message
+            });
+        }
+    }
+}));
+
+// Helper function to extract video metadata (duration, resolution)
+function getVideoMetadata(filePath) {
+    return new Promise((resolve, reject) => {
+        ffmpeg.ffprobe(filePath, (err, metadata) => {
+            if (err) {
+                Logger.warn('MEDIA', `Failed to extract video metadata: ${err.message}`);
+                return resolve({ duration: null, resolution: null });
+            }
+
+            try {
+                const videoStream = metadata.streams.find(s => s.codec_type === 'video');
+                const duration = metadata.format.duration ? Math.round(metadata.format.duration) : null;
+                const resolution = videoStream ? `${videoStream.width}×${videoStream.height}` : null;
+
+                resolve({ duration, resolution });
+            } catch (error) {
+                Logger.warn('MEDIA', `Failed to parse video metadata: ${error.message}`);
+                resolve({ duration: null, resolution: null });
+            }
+        });
+    });
+}
 
 // Helper function to determine file type
 function getFileType(extension) {

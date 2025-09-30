@@ -58,7 +58,12 @@ router.post('/execute/:itemId', asyncHandler(async (req, res) => {
                     break;
 
                 case 'GFX_ON':
-                    const templateUrl = `http://${config.server.host}:${config.server.templatePort}/template/${command.parameters.template}`;
+                    let templateName = command.parameters.template;
+                    // Ensure .html extension
+                    if (templateName && !templateName.endsWith('.html')) {
+                        templateName += '.html';
+                    }
+                    const templateUrl = `http://${config.server.host}:${config.server.templatePort}/template/${templateName}`;
                     result = await CasparService.loadTemplate(1, 2, templateUrl, true);
                     break;
 

@@ -357,6 +357,91 @@ class FTPService extends EventEmitter {
     }
 
     /**
+     * Download file da CasparCG via FTP
+     * Usa una connessione dedicata per evitare conflitti con download concorrenti
+     */
+    async downloadFile(filename, destinationStream) {
+        if (!config.ftp.enabled) {
+            throw new Error('FTP is disabled');
+        }
+
+        // Crea un client FTP dedicato per questo download
+        const ftp = require('basic-ftp');
+        const dedicatedClient = new ftp.Client();
+        dedicatedClient.ftp.verbose = false;
+
+        try {
+            // Connessione con timeout
+            await Promise.race([
+                dedicatedClient.access({
+                    host: config.ftp.host,
+                    port: config.ftp.port,
+                    user: config.ftp.user,
+                    password: config.ftp.password,
+                    secure: config.ftp.secure,
+                    secureOptions: {
+                        rejectUnauthorized: false // Accept self-signed certificates
+                    }
+                }),
+                new Promise((_, reject) =>
+                    setTimeout(() => reject(new Error('FTP connection timeout')), 10000)
+                )
+            ]);
+
+            const remotePath = `${config.ftp.mediaPath}${filename}`;
+
+            Logger.info('FTP', `Downloading file: ${filename}`);
+
+            // Download direttamente nello stream di destinazione
+            await dedicatedClient.downloadTo(destinationStream, remotePath);
+
+            Logger.info('FTP', `File downloaded successfully: ${filename}`);
+
+            return true;
+        } catch (error) {
+            Logger.error('FTP', `Failed to download file: ${filename}`, { error: error.message });
+            throw error;
+        } finally {
+            // Chiudi sempre la connessione dedicata
+            dedicatedClient.close();
+        }
+    }
+
+    /**
+     * Elimina file remoto da CasparCG via FTP
+     */
+    async deleteRemoteFile(filename) {
+        if (!config.ftp.enabled) {
+            throw new Error('FTP is disabled');
+        }
+
+        try {
+            await this.connect();
+
+            // Naviga alla directory media se necessario
+            if (config.ftp.mediaPath && config.ftp.mediaPath !== '/') {
+                await this.client.cd(config.ftp.mediaPath);
+            }
+
+            Logger.warn('FTP', `⚠️ Deleting remote file: ${filename}`);
+
+            // Elimina il file remoto (solo il nome del file, non il path completo)
+            await this.client.remove(filename);
+
+            Logger.info('FTP', `✅ File deleted successfully: ${filename}`);
+
+            return {
+                success: true,
+                filename: filename,
+                message: 'File deleted from CasparCG'
+            };
+        } catch (error) {
+            Logger.error('FTP', `Failed to delete remote file: ${filename}`, { error: error.message });
+            throw error;
+        }
+    }
+
+    /**
      * Test connessione FTP
      */
     async testConnection() {
