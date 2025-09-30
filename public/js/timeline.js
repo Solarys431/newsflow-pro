@@ -76,51 +76,57 @@ class TimelineBuilder {
 
             item.addEventListener('dragstart', (e) => {
                 const assetId = item.dataset.assetId;
-                const asset = this.app.mediaAssets.find(a => a.id === assetId);
+                const nameEl = item.querySelector('.media-name');
 
-                if (!asset) {
-                    console.warn('[TIMELINE] Asset not found:', assetId);
+                if (!nameEl) {
+                    console.warn('[TIMELINE] No media-name element found');
                     return;
                 }
 
+                const name = nameEl.textContent.trim();
+
+                // Check if it's a video/audio asset
+                const asset = this.app.mediaAssets.find(a => a.id === assetId);
+
+                // Check if it's a graphics template
+                const template = this.app.templates ? this.app.templates.find(t => t.name === name) : null;
+
+                let dragData;
+
+                if (asset) {
+                    // Video/Audio asset
+                    dragData = {
+                        assetId: asset.id,
+                        filename: asset.filename,
+                        originalFilename: asset.original_filename || asset.filename,
+                        type: asset.file_type,
+                        duration: asset.duration || 10
+                    };
+                } else if (template) {
+                    // Graphics template
+                    dragData = {
+                        assetId: template.id || `template-${Date.now()}`,
+                        filename: template.filename || `${template.name}.html`,
+                        originalFilename: template.display_name || template.name,
+                        type: 'graphics',
+                        duration: 5
+                    };
+                } else {
+                    // Fallback for graphics without template data
+                    dragData = {
+                        assetId: `graphic-${Date.now()}`,
+                        filename: `${name}.html`,
+                        originalFilename: name,
+                        type: 'graphics',
+                        duration: 5
+                    };
+                }
+
                 e.dataTransfer.effectAllowed = 'copy';
-                e.dataTransfer.setData('text/plain', JSON.stringify({
-                    assetId: asset.id,
-                    filename: asset.filename,
-                    originalFilename: asset.original_filename || asset.filename,
-                    type: asset.file_type,
-                    duration: asset.duration || 10
-                }));
+                e.dataTransfer.setData('text/plain', JSON.stringify(dragData));
 
                 item.classList.add('dragging');
-                console.log('[TIMELINE] Dragging asset:', asset.filename);
-            });
-
-            item.addEventListener('dragend', (e) => {
-                item.classList.remove('dragging');
-            });
-        });
-
-        // Graphics templates
-        const graphicsItems = document.querySelectorAll('#graphics .media-item');
-        graphicsItems.forEach(item => {
-            item.draggable = true;
-            item.classList.add('draggable');
-
-            item.addEventListener('dragstart', (e) => {
-                const filename = item.textContent.trim();
-
-                e.dataTransfer.effectAllowed = 'copy';
-                e.dataTransfer.setData('text/plain', JSON.stringify({
-                    assetId: `graphic-${Date.now()}`,
-                    filename: filename,
-                    originalFilename: filename,
-                    type: 'graphics',
-                    duration: 5 // Default 5 seconds for graphics
-                }));
-
-                item.classList.add('dragging');
-                console.log('[TIMELINE] Dragging graphic:', filename);
+                console.log('[TIMELINE] Dragging:', dragData.originalFilename, '(type:', dragData.type + ')');
             });
 
             item.addEventListener('dragend', (e) => {
@@ -151,7 +157,26 @@ class TimelineBuilder {
                 track.classList.remove('drag-over');
 
                 try {
-                    const data = JSON.parse(e.dataTransfer.getData('text/plain'));
+                    const rawData = e.dataTransfer.getData('text/plain');
+
+                    if (!rawData || rawData.trim() === '') {
+                        console.warn('[TIMELINE] Empty drop data');
+                        return;
+                    }
+
+                    let data;
+                    try {
+                        data = JSON.parse(rawData);
+                    } catch (parseError) {
+                        console.error('[TIMELINE] Invalid JSON in drop data:', rawData);
+                        return;
+                    }
+
+                    if (!data || !data.type || !data.filename) {
+                        console.warn('[TIMELINE] Invalid drop data structure:', data);
+                        return;
+                    }
+
                     const trackName = track.dataset.trackName;
 
                     // Validate track type
@@ -173,9 +198,11 @@ class TimelineBuilder {
                         filename: data.filename,
                         originalFilename: data.originalFilename,
                         start: Math.max(0, startTime),
-                        duration: data.duration,
+                        duration: data.duration || 5,
                         track: trackName
                     });
+
+                    console.log('[TIMELINE] Item dropped successfully:', data.originalFilename);
 
                 } catch (error) {
                     console.error('[TIMELINE] Drop error:', error);
@@ -557,10 +584,10 @@ class TimelineBuilder {
     /**
      * Clear entire timeline
      */
-    clearTimeline() {
+    clearTimeline(silent = false) {
         if (this.items.length === 0) return;
 
-        if (!confirm('⚠️ Clear entire timeline?\n\nThis will remove all items. This action cannot be undone.')) {
+        if (!silent && !confirm('⚠️ Clear entire timeline?\n\nThis will remove all items. This action cannot be undone.')) {
             return;
         }
 

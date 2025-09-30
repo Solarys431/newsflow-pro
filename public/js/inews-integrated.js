@@ -432,8 +432,50 @@ class iNEWSApp {
             writerEl.textContent = story.presenter || '-';
         }
 
+        // Parse metadata
+        let metadata = {};
+        try {
+            metadata = typeof story.metadata === 'string'
+                ? JSON.parse(story.metadata)
+                : story.metadata || {};
+        } catch (e) {
+            console.warn('[DISPLAY] Invalid metadata:', e);
+        }
+
+        // Update currentStory with parsed metadata
+        if (this.currentStory && this.currentStory.id === story.id) {
+            this.currentStory.metadata = metadata;
+        }
+
+        const format = metadata.format || 'text';
+
         // Display script content
         this.displayScriptContent(story);
+
+        // If timeline format, load timeline and switch mode
+        if (format === 'timeline' && this.timelineBuilder && metadata.timeline) {
+            console.log('[DISPLAY] Loading timeline with', metadata.timeline.items?.length || 0, 'items');
+
+            // Clear existing timeline (silent mode - no confirm dialog)
+            this.timelineBuilder.clearTimeline(true);
+
+            // Load timeline items
+            if (metadata.timeline.items && metadata.timeline.items.length > 0) {
+                metadata.timeline.items.forEach(itemData => {
+                    this.timelineBuilder.addTimelineItem(itemData);
+                });
+            }
+
+            // Switch to timeline mode
+            setTimeout(() => {
+                this.switchMode('timeline');
+            }, 100);
+        } else {
+            // Text format - switch to text mode
+            setTimeout(() => {
+                this.switchMode('text');
+            }, 100);
+        }
     }
 
     displayItemBasicInfo(item) {
@@ -1033,22 +1075,55 @@ class iNEWSApp {
         }
 
         try {
+            // Parse metadata
+            let metadata = {};
+            try {
+                metadata = typeof this.currentStory.metadata === 'string'
+                    ? JSON.parse(this.currentStory.metadata)
+                    : this.currentStory.metadata || {};
+            } catch (e) {
+                console.warn('Invalid metadata, using empty object');
+            }
+
+            const format = metadata.format || 'text';
+            let script = this.currentStory.script;
+
+            // If timeline format, save timeline state and generate script
+            if (format === 'timeline' && this.timelineBuilder) {
+                // Save timeline items to metadata
+                metadata.timeline = {
+                    items: this.timelineBuilder.items,
+                    duration: this.timelineBuilder.items.reduce((total, item) =>
+                        Math.max(total, item.start + item.duration), 0
+                    )
+                };
+
+                // Auto-generate script from timeline
+                script = this.timelineBuilder.generateScript();
+                this.currentStory.script = script; // Update local reference
+
+                console.log('[SAVE] Timeline items saved:', metadata.timeline.items.length);
+                console.log('[SAVE] Generated script:', script);
+            }
+
             const response = await fetch(`${Config.api.baseUrl}/stories/${this.currentStory.id}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    script: this.currentStory.script,
+                    script: script,
                     slug: this.currentStory.slug,
                     title: this.currentStory.title,
                     type: this.currentStory.type,
                     presenter: this.currentStory.presenter,
-                    producer: this.currentStory.producer
+                    producer: this.currentStory.producer,
+                    metadata: JSON.stringify(metadata)
                 })
             });
 
             if (!response.ok) throw new Error('Save failed');
 
-            this.showNotification('✓ Storia salvata con successo', 'success');
+            const formatLabel = format === 'timeline' ? '🎬 Timeline' : '📝 Text';
+            this.showNotification(`✓ ${formatLabel} story saved successfully`, 'success');
         } catch (error) {
             console.error('Save error:', error);
             this.showNotification('Errore salvataggio storia', 'error');
@@ -1605,6 +1680,15 @@ class iNEWSApp {
                                 </select>
                             </div>
                             <div class="form-group">
+                                <label>Format *</label>
+                                <select id="new-format" class="form-input">
+                                    <option value="text">📝 Text Script</option>
+                                    <option value="timeline">🎬 Visual Timeline</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
                                 <label>Presenter</label>
                                 <input type="text" id="new-presenter" class="form-input" placeholder="Mario Rossi">
                             </div>
@@ -1633,6 +1717,7 @@ class iNEWSApp {
         const slug = document.getElementById('new-slug').value.trim();
         const title = document.getElementById('new-title').value.trim();
         const type = document.getElementById('new-type').value;
+        const format = document.getElementById('new-format').value;
         const presenter = document.getElementById('new-presenter').value.trim();
         const producer = document.getElementById('new-producer').value.trim();
         const script = document.getElementById('new-script').value;
@@ -1643,22 +1728,54 @@ class iNEWSApp {
         }
 
         try {
+            // Create metadata object with format
+            const metadata = {
+                format: format,
+                timeline: format === 'timeline' ? { items: [], duration: 0 } : undefined
+            };
+
             const response = await fetch(`${Config.api.baseUrl}/stories`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ slug, title, type, presenter, producer, script })
+                body: JSON.stringify({
+                    slug,
+                    title,
+                    type,
+                    presenter,
+                    producer,
+                    script,
+                    metadata: JSON.stringify(metadata)
+                })
             });
 
             if (!response.ok) throw new Error('Create failed');
 
             const result = await response.json();
             this.closeModal();
-            this.showNotification('✓ Story created successfully', 'success');
+            this.showNotification(`✓ Story created (${format === 'timeline' ? '🎬 Timeline' : '📝 Text'})`, 'success');
             await this.loadStories();
 
             // Load the new story
             this.currentStory = result;
+
+            // Parse metadata string to object
+            if (typeof result.metadata === 'string') {
+                try {
+                    this.currentStory.metadata = JSON.parse(result.metadata);
+                } catch (e) {
+                    console.warn('[CREATE] Failed to parse metadata:', e);
+                    this.currentStory.metadata = {};
+                }
+            }
+
             this.displayStory(result);
+
+            // If timeline format, switch to timeline mode
+            if (format === 'timeline') {
+                setTimeout(() => {
+                    this.switchMode('timeline');
+                }, 300);
+            }
         } catch (error) {
             console.error('Create error:', error);
             this.showNotification('Error creating story', 'error');

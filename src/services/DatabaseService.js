@@ -150,7 +150,8 @@ class DatabaseService {
             producer: story.producer,
             estimated_duration: story.estimated_duration || 0,
             status: story.status || 'draft',
-            created_by: story.created_by || 'System'
+            created_by: story.created_by || 'System',
+            metadata: story.metadata || '{}'
         };
 
         if (this.mode === 'supabase') {
@@ -163,11 +164,11 @@ class DatabaseService {
             return data;
         } else {
             const result = await this.pool.query(
-                `INSERT INTO stories (slug, title, type, script, presenter, producer, estimated_duration, status, created_by)
-                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *`,
+                `INSERT INTO stories (slug, title, type, script, presenter, producer, estimated_duration, status, created_by, metadata)
+                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING *`,
                 [storyData.slug, storyData.title, storyData.type, storyData.script,
                  storyData.presenter, storyData.producer, storyData.estimated_duration,
-                 storyData.status, storyData.created_by]
+                 storyData.status, storyData.created_by, storyData.metadata]
             );
             return result.rows[0];
         }
