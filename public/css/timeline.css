@@ -270,6 +270,7 @@
             #1a1f2e 5%
         );
     min-width: 800px;
+    overflow: visible;
 }
 
 .track-content.drag-over {
@@ -611,7 +612,7 @@ button, .timeline-item, .track-content {
     width: 2px;
     background: #ef4444;
     pointer-events: none;
-    z-index: 1000;
+    z-index: 9999;
     opacity: 0;
     transition: opacity 0.1s;
     box-shadow: 0 0 8px rgba(239, 68, 68, 0.6);
@@ -636,6 +637,7 @@ button, .timeline-item, .track-content {
     white-space: nowrap;
     pointer-events: none;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    z-index: 10000;
 }
 
 .timeline-drag-tooltip::after {
