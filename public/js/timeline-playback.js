@@ -29,6 +29,11 @@ class TimelinePlayback {
         this.previewInfo = document.getElementById('preview-info');
         this.playerControls = document.getElementById('video-player-controls');
 
+        // Create audio element for AUDIO track
+        this.previewAudio = document.createElement('audio');
+        this.previewAudio.id = 'preview-audio';
+        document.body.appendChild(this.previewAudio);
+
         // Create playhead element
         this.createPlayhead();
 
@@ -197,6 +202,11 @@ class TimelinePlayback {
         // Pause active video
         if (this.previewVideo && !this.previewVideo.paused) {
             this.previewVideo.pause();
+        }
+
+        // Pause active audio
+        if (this.previewAudio && !this.previewAudio.paused) {
+            this.previewAudio.pause();
         }
 
         this.updateTransportButtons();
@@ -423,15 +433,52 @@ class TimelinePlayback {
      * Handle audio playback
      */
     handleAudioPlayback(audioItems) {
-        // Audio implementation (similar to video)
-        // For now, audio plays through the same video element if no video is active
-        const currentAudio = audioItems[0];
+        const currentAudio = audioItems[0]; // Only play first audio if multiple overlap
 
-        if (currentAudio && !this.activeVideo) {
-            // Play audio only if no video is playing
-            // (video has its own audio track)
-            // TODO: Implement separate audio element for audio-only tracks
-            console.log('[PLAYBACK] Audio track detected:', currentAudio.filename);
+        if (currentAudio && currentAudio.id !== this.activeAudio?.id) {
+            // New audio needs to start
+            console.log('[PLAYBACK] Starting audio:', currentAudio.filename);
+
+            this.activeAudio = currentAudio;
+
+            // Load audio in preview
+            const audioUrl = `${Config.api.baseUrl}/media/stream/${currentAudio.filename}`;
+            this.previewAudio.src = audioUrl;
+
+            // Calculate playback position within the audio
+            const audioPlaybackTime = this.currentTime - currentAudio.start;
+
+            this.previewAudio.onloadeddata = () => {
+                this.previewAudio.currentTime = audioPlaybackTime;
+                this.previewAudio.play().catch(err => {
+                    console.error('[PLAYBACK] Audio play error:', err);
+                });
+            };
+
+        } else if (!currentAudio && this.activeAudio) {
+            // Audio ended, clear it
+            console.log('[PLAYBACK] Audio ended');
+            this.previewAudio.pause();
+            this.previewAudio.src = '';
+            this.activeAudio = null;
+
+        } else if (currentAudio && currentAudio.id === this.activeAudio?.id) {
+            // Same audio playing, ensure it's in sync
+            const expectedTime = this.currentTime - currentAudio.start;
+            const actualTime = this.previewAudio.currentTime;
+
+            // Sync if drift is more than 0.2 seconds
+            if (Math.abs(expectedTime - actualTime) > 0.2) {
+                console.log('[PLAYBACK] Syncing audio:', { expected: expectedTime, actual: actualTime });
+                this.previewAudio.currentTime = expectedTime;
+            }
+
+            // Ensure playing
+            if (this.previewAudio.paused && this.isPlaying) {
+                this.previewAudio.play().catch(err => {
+                    console.error('[PLAYBACK] Audio play error:', err);
+                });
+            }
         }
     }
 
@@ -444,6 +491,12 @@ class TimelinePlayback {
             this.previewVideo.pause();
             this.previewVideo.src = '';
             this.previewVideo.style.display = 'none';
+        }
+
+        // Clear audio
+        if (this.previewAudio) {
+            this.previewAudio.pause();
+            this.previewAudio.src = '';
         }
 
         // Clear graphics

@@ -269,6 +269,11 @@ class iNEWSApp {
         try {
             this.mediaAssets = await this.api.getMedia();
             this.renderMediaPanel();
+
+            // Re-setup drag and drop for timeline after media loaded
+            if (this.timelineBuilder) {
+                this.timelineBuilder.setupMediaLibraryDragDrop();
+            }
         } catch (error) {
             console.error('Error loading media:', error);
         }
@@ -770,6 +775,11 @@ class iNEWSApp {
             `).join('');
 
             console.log('Graphics rendered:', container.children.length);
+
+            // Re-setup drag and drop for timeline after graphics loaded
+            if (this.timelineBuilder) {
+                this.timelineBuilder.setupMediaLibraryDragDrop();
+            }
         } catch (error) {
             console.error('Error loading templates:', error);
         }

@@ -71,6 +71,11 @@ router.post('/execute/:itemId', asyncHandler(async (req, res) => {
                     result = await CasparService.removeTemplate(1, 2);
                     break;
 
+                case 'AUDIO':
+                    const audioFilename = command.parameters.filename;
+                    result = await CasparService.playMedia(1, 2, audioFilename);
+                    break;
+
                 case 'AUDIO_SOT':
                     const volume = command.parameters.level === 'UP' ? 1.0 : 0.3;
                     result = await CasparService.setVolume(1, 1, volume);

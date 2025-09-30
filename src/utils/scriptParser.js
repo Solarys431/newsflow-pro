@@ -208,6 +208,17 @@ function parseAutomationCommand(commandLine, startTime) {
                 parameters: {}
             };
 
+        case 'AUDIO':
+            const audioFilename = parts[1] ? parts[1].replace(/"/g, '') : '';
+            const audioDuration = parts[2] ? parseDuration(parts[2]) : 10;
+            return {
+                type: 'AUDIO',
+                start_time: startTime,
+                duration: audioDuration,
+                caspar_command: `PLAY 1-2 "${audioFilename}"`,
+                parameters: { filename: audioFilename }
+            };
+
         case 'SOT UP':
         case 'SOT UNDER':
             const audioFile = parts[1] ? parts[1].replace(/"/g, '') : '';
@@ -319,7 +330,7 @@ function validateScript(script) {
             const content = trimmed.slice(2, -2).trim();
             const validCommands = [
                 'TAKE VTR', 'TAKE PKG', 'GFX ON', 'GFX OFF',
-                'SOT UP', 'SOT UNDER', 'WAIT'
+                'AUDIO', 'SOT UP', 'SOT UNDER', 'WAIT'
             ];
 
             const commandType = content.split(' - ')[0].toUpperCase();
