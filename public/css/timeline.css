@@ -600,3 +600,50 @@
 button, .timeline-item, .track-content {
     transition: all 0.2s ease-out;
 }
+
+/* ============================================
+   DRAG PRECISION INDICATORS
+   ============================================ */
+.timeline-drag-playhead {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: #ef4444;
+    pointer-events: none;
+    z-index: 1000;
+    opacity: 0;
+    transition: opacity 0.1s;
+    box-shadow: 0 0 8px rgba(239, 68, 68, 0.6);
+}
+
+.timeline-drag-playhead.active {
+    opacity: 1;
+}
+
+.timeline-drag-tooltip {
+    position: absolute;
+    top: -35px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #ef4444;
+    color: white;
+    padding: 6px 12px;
+    border-radius: 4px;
+    font-size: 13px;
+    font-weight: 700;
+    font-family: 'Courier New', monospace;
+    white-space: nowrap;
+    pointer-events: none;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.timeline-drag-tooltip::after {
+    content: '';
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    border: 6px solid transparent;
+    border-top-color: #ef4444;
+}

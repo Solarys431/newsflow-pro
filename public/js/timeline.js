@@ -27,6 +27,7 @@ class TimelineBuilder {
         console.log('[TIMELINE] Setting up timeline...');
         this.setupTimecodeRuler();
         this.setupMediaLibraryDragDrop();
+        this.setupPrecisionIndicators(); // Add drag precision feedback
         this.setupTrackDropZones();
         this.setupControlButtons();
         this.applyZoom(); // Apply initial zoom level
@@ -84,6 +85,61 @@ class TimelineBuilder {
         }
 
         console.log(`[TIMELINE] Timecode step: ${step}s, major every: ${majorEvery * step}s, duration: ${this.totalDuration}s`);
+    }
+
+    /**
+     * Setup precision drag indicators (playhead + tooltip)
+     */
+    setupPrecisionIndicators() {
+        const timelineContent = document.querySelector('.timeline-content');
+        if (!timelineContent) return;
+
+        // Create playhead indicator
+        this.dragPlayhead = document.createElement('div');
+        this.dragPlayhead.className = 'timeline-drag-playhead';
+
+        // Create tooltip
+        this.dragTooltip = document.createElement('div');
+        this.dragTooltip.className = 'timeline-drag-tooltip';
+        this.dragTooltip.textContent = '00:00';
+
+        this.dragPlayhead.appendChild(this.dragTooltip);
+        timelineContent.appendChild(this.dragPlayhead);
+
+        console.log('[TIMELINE] Precision indicators created');
+    }
+
+    /**
+     * Update playhead position during drag
+     */
+    updateDragPlayhead(track, clientX) {
+        if (!this.dragPlayhead) return;
+
+        const trackRect = track.getBoundingClientRect();
+        const relativeX = clientX - trackRect.left;
+
+        // Calculate time position considering zoom
+        const timeSeconds = Math.floor(relativeX / this.pixelsPerSecond / this.zoomLevel);
+        const clampedTime = Math.max(0, Math.min(timeSeconds, this.totalDuration));
+
+        // Update playhead position
+        const leftPercent = (clampedTime / this.totalDuration) * 100;
+        this.dragPlayhead.style.left = `${leftPercent}%`;
+
+        // Update tooltip text
+        this.dragTooltip.textContent = this.formatTime(clampedTime);
+
+        // Show indicator
+        this.dragPlayhead.classList.add('active');
+    }
+
+    /**
+     * Hide playhead indicator
+     */
+    hideDragPlayhead() {
+        if (this.dragPlayhead) {
+            this.dragPlayhead.classList.remove('active');
+        }
     }
 
     /**
@@ -168,15 +224,24 @@ class TimelineBuilder {
                 e.preventDefault();
                 e.dataTransfer.dropEffect = 'copy';
                 track.classList.add('drag-over');
+
+                // Update precision playhead indicator
+                this.updateDragPlayhead(track, e.clientX);
             });
 
             track.addEventListener('dragleave', (e) => {
                 track.classList.remove('drag-over');
+
+                // Hide precision indicator when leaving track
+                this.hideDragPlayhead();
             });
 
             track.addEventListener('drop', (e) => {
                 e.preventDefault();
                 track.classList.remove('drag-over');
+
+                // Hide precision indicator on drop
+                this.hideDragPlayhead();
 
                 try {
                     const rawData = e.dataTransfer.getData('text/plain');
