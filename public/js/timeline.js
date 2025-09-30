@@ -29,6 +29,7 @@ class TimelineBuilder {
         this.setupMediaLibraryDragDrop();
         this.setupTrackDropZones();
         this.setupControlButtons();
+        this.applyZoom(); // Apply initial zoom level
         this.updateStats();
 
         console.log('[TIMELINE] Timeline ready!');
@@ -694,15 +695,52 @@ class TimelineBuilder {
      */
     zoom(direction) {
         if (direction === 'in') {
-            this.zoomLevel = Math.min(2.0, this.zoomLevel + 0.25);
+            this.zoomLevel = Math.min(4.0, this.zoomLevel + 0.25); // Max 400%
         } else {
-            this.zoomLevel = Math.max(0.5, this.zoomLevel - 0.25);
+            this.zoomLevel = Math.max(0.25, this.zoomLevel - 0.25); // Min 25%
         }
 
-        document.getElementById('zoom-level').textContent = `${Math.round(this.zoomLevel * 100)}%`;
-
-        // TODO: Implement actual zoom scaling
+        this.applyZoom();
         console.log('[TIMELINE] Zoom level:', this.zoomLevel);
+    }
+
+    /**
+     * Apply zoom transformation to timeline
+     */
+    applyZoom() {
+        // Update zoom level display
+        const zoomDisplay = document.getElementById('zoom-level');
+        if (zoomDisplay) {
+            zoomDisplay.textContent = `${Math.round(this.zoomLevel * 100)}%`;
+        }
+
+        // Apply horizontal scaling to ruler and tracks
+        const ruler = document.getElementById('timeline-ruler');
+        const tracks = document.querySelectorAll('.track-content');
+
+        const baseWidth = 800; // Base min-width in pixels
+        const scaledWidth = Math.floor(baseWidth * this.zoomLevel);
+
+        if (ruler) {
+            ruler.style.minWidth = `${scaledWidth}px`;
+            ruler.style.transform = `scaleX(${this.zoomLevel})`;
+            ruler.style.transformOrigin = 'left center';
+
+            // Compensate label distortion by counter-scaling
+            const labels = ruler.querySelectorAll('.timecode-label');
+            labels.forEach(label => {
+                label.style.transform = `scaleX(${1 / this.zoomLevel})`;
+                label.style.transformOrigin = 'left center';
+            });
+        }
+
+        tracks.forEach(track => {
+            track.style.minWidth = `${scaledWidth}px`;
+            track.style.transform = `scaleX(${this.zoomLevel})`;
+            track.style.transformOrigin = 'left center';
+        });
+
+        console.log('[TIMELINE] Applied zoom:', this.zoomLevel, 'scaled width:', scaledWidth);
     }
 
     /**
