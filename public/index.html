@@ -7,6 +7,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/timeline.css">
 </head>
 <body>
     <!-- App Container -->
@@ -130,6 +131,16 @@
                     </div>
                 </div>
                 <div class="script-toolbar">
+                    <!-- Mode Toggle -->
+                    <div class="script-mode-toggle">
+                        <button class="mode-toggle-btn active" id="btn-text-mode" title="Text Mode">
+                            <i class="fas fa-align-left"></i> Text
+                        </button>
+                        <button class="mode-toggle-btn" id="btn-timeline-mode" title="Timeline Mode">
+                            <i class="fas fa-stream"></i> Timeline
+                        </button>
+                    </div>
+                    <div class="script-toolbar-spacer"></div>
                     <button class="script-tool-btn" id="btn-insert-video" title="Inserisci Video">
                         <i class="fas fa-film"></i> Video
                     </button>
@@ -148,10 +159,111 @@
                     </button>
                 </div>
                 <div class="story-content">
+                    <!-- TEXT MODE (Default) -->
                     <div class="script-sections" id="script-sections">
                         <div class="empty-state">
                             <i class="fas fa-file-alt"></i>
                             <p>Select a story from the rundown to view its content</p>
+                        </div>
+                    </div>
+
+                    <!-- TIMELINE MODE (Hidden by default) -->
+                    <div class="timeline-builder" id="timeline-builder" style="display: none;">
+                        <!-- Timeline Header -->
+                        <div class="timeline-header">
+                            <div class="timeline-controls">
+                                <button class="timeline-btn" id="btn-clear-timeline" title="Clear Timeline">
+                                    <i class="fas fa-trash"></i> Clear
+                                </button>
+                                <button class="timeline-btn primary" id="btn-generate-script" title="Generate Script from Timeline">
+                                    <i class="fas fa-code"></i> Generate Script
+                                </button>
+                            </div>
+                            <div class="timeline-zoom">
+                                <button class="zoom-btn" id="zoom-out" title="Zoom Out">
+                                    <i class="fas fa-search-minus"></i>
+                                </button>
+                                <span class="zoom-level" id="zoom-level">100%</span>
+                                <button class="zoom-btn" id="zoom-in" title="Zoom In">
+                                    <i class="fas fa-search-plus"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Timeline Content -->
+                        <div class="timeline-content">
+                            <!-- Timecode Ruler -->
+                            <div class="timeline-ruler-container">
+                                <div class="track-label-placeholder"></div>
+                                <div class="timeline-ruler" id="timeline-ruler">
+                                    <!-- Timecodes dynamically generated -->
+                                </div>
+                            </div>
+
+                            <!-- Track 1: VIDEO -->
+                            <div class="timeline-track" data-track="video" data-layer="1">
+                                <div class="track-label">
+                                    <div class="track-icon video">
+                                        <i class="fas fa-video"></i>
+                                    </div>
+                                    <span class="track-name">VIDEO</span>
+                                </div>
+                                <div class="track-content" id="track-video" data-track-name="video">
+                                    <!-- Timeline items dropped here -->
+                                </div>
+                            </div>
+
+                            <!-- Track 2: GRAPHICS -->
+                            <div class="timeline-track" data-track="graphics" data-layer="20">
+                                <div class="track-label">
+                                    <div class="track-icon graphics">
+                                        <i class="fas fa-layer-group"></i>
+                                    </div>
+                                    <span class="track-name">GRAPHICS</span>
+                                </div>
+                                <div class="track-content" id="track-graphics" data-track-name="graphics">
+                                    <!-- Graphics overlay items -->
+                                </div>
+                            </div>
+
+                            <!-- Track 3: AUDIO -->
+                            <div class="timeline-track" data-track="audio" data-layer="10">
+                                <div class="track-label">
+                                    <div class="track-icon audio">
+                                        <i class="fas fa-volume-up"></i>
+                                    </div>
+                                    <span class="track-name">AUDIO</span>
+                                </div>
+                                <div class="track-content" id="track-audio" data-track-name="audio">
+                                    <!-- Audio items -->
+                                </div>
+                            </div>
+
+                            <!-- Track 4: TEXT -->
+                            <div class="timeline-track" data-track="text" data-layer="text">
+                                <div class="track-label">
+                                    <div class="track-icon text">
+                                        <i class="fas fa-align-left"></i>
+                                    </div>
+                                    <span class="track-name">TEXT</span>
+                                </div>
+                                <div class="track-content" id="track-text" data-track-name="text">
+                                    <!-- Text/voiceover blocks -->
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Timeline Footer Info -->
+                        <div class="timeline-footer">
+                            <div class="timeline-stats">
+                                <span class="stat-item">
+                                    <i class="fas fa-film"></i> <strong id="timeline-item-count">0</strong> items
+                                </span>
+                                <span class="stat-item">
+                                    <i class="fas fa-clock"></i> Total: <strong id="timeline-total-duration">0:00</strong>
+                                </span>
+                            </div>
+                            <div class="timeline-playhead-time" id="timeline-playhead-time">0:00</div>
                         </div>
                     </div>
                 </div>
@@ -349,6 +461,7 @@
     <script src="js/config.js"></script>
     <script src="js/api.js"></script>
     <script src="js/websocket.js"></script>
+    <script src="js/timeline.js"></script>
     <script src="js/inews-integrated.js"></script>
 </body>
 </html>

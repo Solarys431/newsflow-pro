@@ -1,0 +1,653 @@
+/**
+ * Timeline Builder - SuperConductor Style
+ * Visual timeline editor for broadcast automation
+ */
+
+class TimelineBuilder {
+    constructor(app) {
+        this.app = app; // Reference to iNEWSApp instance
+        this.items = [];
+        this.pixelsPerSecond = 15; // 15px = 1 secondo (scalabile con zoom)
+        this.totalDuration = 60; // 60 secondi = 1 minuto timeline iniziale
+        this.zoomLevel = 1.0; // 100%
+        this.selectedItem = null;
+        this.isDragging = false;
+        this.isResizing = false;
+        this.dragStartX = 0;
+        this.dragOffset = 0;
+        this.resizeHandle = null;
+
+        console.log('[TIMELINE] TimelineBuilder initialized');
+    }
+
+    /**
+     * Initialize timeline with all event listeners
+     */
+    init() {
+        console.log('[TIMELINE] Setting up timeline...');
+        this.setupTimecodeRuler();
+        this.setupMediaLibraryDragDrop();
+        this.setupTrackDropZones();
+        this.setupControlButtons();
+        this.updateStats();
+
+        console.log('[TIMELINE] Timeline ready!');
+    }
+
+    /**
+     * Setup timecode ruler with markers every 5 seconds
+     */
+    setupTimecodeRuler() {
+        const ruler = document.getElementById('timeline-ruler');
+        if (!ruler) return;
+
+        ruler.innerHTML = '';
+
+        const stepSeconds = 5;
+        const steps = Math.ceil(this.totalDuration / stepSeconds);
+
+        for (let i = 0; i <= steps; i++) {
+            const seconds = i * stepSeconds;
+            const percent = (seconds / this.totalDuration) * 100;
+            const isMajor = (i % 2 === 0); // Major marker ogni 10 secondi
+
+            const marker = document.createElement('div');
+            marker.className = `timecode-marker ${isMajor ? 'major' : ''}`;
+            marker.style.left = `${percent}%`;
+
+            const label = document.createElement('span');
+            label.className = 'timecode-label';
+            label.textContent = this.formatTime(seconds);
+            marker.appendChild(label);
+
+            ruler.appendChild(marker);
+        }
+    }
+
+    /**
+     * Enable drag & drop from media library
+     */
+    setupMediaLibraryDragDrop() {
+        const mediaItems = document.querySelectorAll('.media-item');
+
+        mediaItems.forEach(item => {
+            item.draggable = true;
+            item.classList.add('draggable');
+
+            item.addEventListener('dragstart', (e) => {
+                const assetId = item.dataset.assetId;
+                const asset = this.app.mediaAssets.find(a => a.id === assetId);
+
+                if (!asset) {
+                    console.warn('[TIMELINE] Asset not found:', assetId);
+                    return;
+                }
+
+                e.dataTransfer.effectAllowed = 'copy';
+                e.dataTransfer.setData('text/plain', JSON.stringify({
+                    assetId: asset.id,
+                    filename: asset.filename,
+                    originalFilename: asset.original_filename || asset.filename,
+                    type: asset.file_type,
+                    duration: asset.duration || 10
+                }));
+
+                item.classList.add('dragging');
+                console.log('[TIMELINE] Dragging asset:', asset.filename);
+            });
+
+            item.addEventListener('dragend', (e) => {
+                item.classList.remove('dragging');
+            });
+        });
+
+        // Graphics templates
+        const graphicsItems = document.querySelectorAll('#graphics .media-item');
+        graphicsItems.forEach(item => {
+            item.draggable = true;
+            item.classList.add('draggable');
+
+            item.addEventListener('dragstart', (e) => {
+                const filename = item.textContent.trim();
+
+                e.dataTransfer.effectAllowed = 'copy';
+                e.dataTransfer.setData('text/plain', JSON.stringify({
+                    assetId: `graphic-${Date.now()}`,
+                    filename: filename,
+                    originalFilename: filename,
+                    type: 'graphics',
+                    duration: 5 // Default 5 seconds for graphics
+                }));
+
+                item.classList.add('dragging');
+                console.log('[TIMELINE] Dragging graphic:', filename);
+            });
+
+            item.addEventListener('dragend', (e) => {
+                item.classList.remove('dragging');
+            });
+        });
+    }
+
+    /**
+     * Setup drop zones for timeline tracks
+     */
+    setupTrackDropZones() {
+        const tracks = document.querySelectorAll('.track-content');
+
+        tracks.forEach(track => {
+            track.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                e.dataTransfer.dropEffect = 'copy';
+                track.classList.add('drag-over');
+            });
+
+            track.addEventListener('dragleave', (e) => {
+                track.classList.remove('drag-over');
+            });
+
+            track.addEventListener('drop', (e) => {
+                e.preventDefault();
+                track.classList.remove('drag-over');
+
+                try {
+                    const data = JSON.parse(e.dataTransfer.getData('text/plain'));
+                    const trackName = track.dataset.trackName;
+
+                    // Validate track type
+                    if (!this.validateTrackType(data.type, trackName)) {
+                        console.warn('[TIMELINE] Invalid drop:', data.type, 'on', trackName);
+                        return;
+                    }
+
+                    // Calculate drop position
+                    const trackRect = track.getBoundingClientRect();
+                    const dropX = e.clientX - trackRect.left;
+                    const startTime = Math.floor(dropX / this.pixelsPerSecond / this.zoomLevel);
+
+                    // Add item to timeline
+                    this.addTimelineItem({
+                        id: `item-${Date.now()}`,
+                        assetId: data.assetId,
+                        type: data.type,
+                        filename: data.filename,
+                        originalFilename: data.originalFilename,
+                        start: Math.max(0, startTime),
+                        duration: data.duration,
+                        track: trackName
+                    });
+
+                } catch (error) {
+                    console.error('[TIMELINE] Drop error:', error);
+                }
+            });
+        });
+    }
+
+    /**
+     * Validate if item type can be dropped on track
+     */
+    validateTrackType(itemType, trackName) {
+        const validMappings = {
+            'video': 'video',
+            'graphics': 'graphics',
+            'audio': 'audio',
+            'text': 'text'
+        };
+
+        return validMappings[itemType] === trackName;
+    }
+
+    /**
+     * Add timeline item to track
+     */
+    addTimelineItem(itemData) {
+        const track = document.querySelector(`#track-${itemData.track}`);
+        if (!track) {
+            console.error('[TIMELINE] Track not found:', itemData.track);
+            return;
+        }
+
+        // Check if extends beyond timeline
+        if (itemData.start + itemData.duration > this.totalDuration) {
+            this.totalDuration = itemData.start + itemData.duration + 10;
+            this.setupTimecodeRuler();
+        }
+
+        // Create DOM element
+        const item = document.createElement('div');
+        item.className = 'timeline-item';
+        item.dataset.id = itemData.id;
+        item.dataset.type = itemData.type;
+        item.dataset.filename = itemData.filename;
+        item.dataset.start = itemData.start;
+        item.dataset.duration = itemData.duration;
+        item.dataset.track = itemData.track;
+
+        // Calculate position and width
+        const left = (itemData.start / this.totalDuration) * 100;
+        const width = (itemData.duration / this.totalDuration) * 100;
+
+        item.style.left = `${left}%`;
+        item.style.width = `${width}%`;
+
+        // Build HTML content
+        const iconMap = {
+            'video': 'fa-video',
+            'graphics': 'fa-layer-group',
+            'audio': 'fa-volume-up',
+            'text': 'fa-align-left'
+        };
+
+        item.innerHTML = `
+            <div class="timeline-item-content">
+                <div class="item-header">
+                    <i class="fas ${iconMap[itemData.type]} item-type-icon"></i>
+                    <span class="item-name">${itemData.originalFilename}</span>
+                </div>
+                <div class="item-footer">
+                    <span class="item-duration">${this.formatTime(itemData.duration)}</span>
+                    <span class="item-start-time">${this.formatTime(itemData.start)}</span>
+                </div>
+            </div>
+            <div class="resize-handle resize-handle-left"></div>
+            <div class="resize-handle resize-handle-right"></div>
+            <button class="btn-delete-timeline-item">
+                <i class="fas fa-times"></i>
+            </button>
+        `;
+
+        track.appendChild(item);
+        this.items.push(itemData);
+
+        // Setup item interactions
+        this.setupItemInteractions(item);
+
+        // Check overlaps
+        this.checkOverlaps();
+
+        // Update stats
+        this.updateStats();
+
+        console.log('[TIMELINE] Item added:', itemData);
+    }
+
+    /**
+     * Setup interactions for timeline item (select, drag, resize, delete)
+     */
+    setupItemInteractions(item) {
+        // Select item
+        item.addEventListener('mousedown', (e) => {
+            // Ignore if clicking delete or resize handles
+            if (e.target.closest('.btn-delete-timeline-item') ||
+                e.target.classList.contains('resize-handle')) {
+                return;
+            }
+
+            this.selectItem(item);
+
+            // Start dragging
+            this.isDragging = true;
+            this.dragStartX = e.clientX;
+            this.dragOffset = e.clientX - item.getBoundingClientRect().left;
+            item.classList.add('dragging');
+
+            e.preventDefault();
+        });
+
+        // Delete button
+        const deleteBtn = item.querySelector('.btn-delete-timeline-item');
+        if (deleteBtn) {
+            deleteBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                this.deleteItem(item.dataset.id);
+            });
+        }
+
+        // Resize handles
+        const leftHandle = item.querySelector('.resize-handle-left');
+        const rightHandle = item.querySelector('.resize-handle-right');
+
+        [leftHandle, rightHandle].forEach(handle => {
+            handle.addEventListener('mousedown', (e) => {
+                e.stopPropagation();
+                this.isResizing = true;
+                this.resizeHandle = handle;
+                this.dragStartX = e.clientX;
+                this.selectItem(item);
+                item.classList.add('resizing');
+            });
+        });
+    }
+
+    /**
+     * Global mouse move handler (for dragging and resizing)
+     */
+    handleMouseMove(e) {
+        if (this.isDragging && this.selectedItem) {
+            const track = this.selectedItem.parentElement;
+            const trackRect = track.getBoundingClientRect();
+
+            let newLeft = e.clientX - trackRect.left - this.dragOffset;
+            newLeft = Math.max(0, Math.min(newLeft, trackRect.width - this.selectedItem.offsetWidth));
+
+            const leftPercent = (newLeft / trackRect.width) * 100;
+            this.selectedItem.style.left = `${leftPercent}%`;
+
+        } else if (this.isResizing && this.selectedItem && this.resizeHandle) {
+            const track = this.selectedItem.parentElement;
+            const trackRect = track.getBoundingClientRect();
+            const deltaX = e.clientX - this.dragStartX;
+
+            const currentLeft = parseFloat(this.selectedItem.style.left);
+            const currentWidth = parseFloat(this.selectedItem.style.width);
+
+            if (this.resizeHandle.classList.contains('resize-handle-left')) {
+                // Resize from left
+                const deltaPercent = (deltaX / trackRect.width) * 100;
+                const newLeft = Math.max(0, Math.min(currentLeft + deltaPercent, currentLeft + currentWidth - 1));
+                const newWidth = currentWidth - (newLeft - currentLeft);
+
+                if (newWidth >= 1) {
+                    this.selectedItem.style.left = `${newLeft}%`;
+                    this.selectedItem.style.width = `${newWidth}%`;
+                    this.dragStartX = e.clientX;
+                }
+            } else {
+                // Resize from right
+                const deltaPercent = (deltaX / trackRect.width) * 100;
+                const newWidth = Math.max(1, Math.min(currentWidth + deltaPercent, 100 - currentLeft));
+
+                this.selectedItem.style.width = `${newWidth}%`;
+                this.dragStartX = e.clientX;
+            }
+        }
+    }
+
+    /**
+     * Global mouse up handler
+     */
+    handleMouseUp(e) {
+        if (this.isDragging && this.selectedItem) {
+            this.isDragging = false;
+            this.selectedItem.classList.remove('dragging');
+
+            // Update item data
+            const newStart = Math.floor((parseFloat(this.selectedItem.style.left) / 100) * this.totalDuration);
+            this.selectedItem.dataset.start = newStart;
+
+            this.updateItemData(this.selectedItem.dataset.id, { start: newStart });
+
+            // Update UI
+            const startTimeEl = this.selectedItem.querySelector('.item-start-time');
+            if (startTimeEl) startTimeEl.textContent = this.formatTime(newStart);
+
+            this.checkOverlaps();
+
+        } else if (this.isResizing && this.selectedItem) {
+            this.isResizing = false;
+            this.resizeHandle = null;
+            this.selectedItem.classList.remove('resizing');
+
+            // Update item data
+            const newStart = Math.floor((parseFloat(this.selectedItem.style.left) / 100) * this.totalDuration);
+            const newDuration = Math.floor((parseFloat(this.selectedItem.style.width) / 100) * this.totalDuration);
+
+            this.selectedItem.dataset.start = newStart;
+            this.selectedItem.dataset.duration = newDuration;
+
+            this.updateItemData(this.selectedItem.dataset.id, {
+                start: newStart,
+                duration: newDuration
+            });
+
+            // Update UI
+            const durationEl = this.selectedItem.querySelector('.item-duration');
+            const startTimeEl = this.selectedItem.querySelector('.item-start-time');
+            if (durationEl) durationEl.textContent = this.formatTime(newDuration);
+            if (startTimeEl) startTimeEl.textContent = this.formatTime(newStart);
+
+            this.checkOverlaps();
+        }
+    }
+
+    /**
+     * Select timeline item
+     */
+    selectItem(item) {
+        document.querySelectorAll('.timeline-item').forEach(el => {
+            el.classList.remove('selected');
+        });
+        item.classList.add('selected');
+        this.selectedItem = item;
+    }
+
+    /**
+     * Delete timeline item
+     */
+    deleteItem(itemId) {
+        const item = document.querySelector(`.timeline-item[data-id="${itemId}"]`);
+        if (item) {
+            item.remove();
+            this.items = this.items.filter(i => i.id !== itemId);
+            this.checkOverlaps();
+            this.updateStats();
+            console.log('[TIMELINE] Item deleted:', itemId);
+        }
+    }
+
+    /**
+     * Update item data in items array
+     */
+    updateItemData(itemId, updates) {
+        const item = this.items.find(i => i.id === itemId);
+        if (item) {
+            Object.assign(item, updates);
+        }
+    }
+
+    /**
+     * Check for overlapping items on same track
+     */
+    checkOverlaps() {
+        // Remove existing overlap indicators
+        document.querySelectorAll('.timeline-item').forEach(item => {
+            item.classList.remove('overlapping');
+            const indicator = item.querySelector('.overlap-indicator');
+            if (indicator) indicator.remove();
+        });
+
+        // Group items by track
+        const trackGroups = {};
+        this.items.forEach(item => {
+            if (!trackGroups[item.track]) trackGroups[item.track] = [];
+            trackGroups[item.track].push(item);
+        });
+
+        // Check overlaps per track
+        Object.values(trackGroups).forEach(trackItems => {
+            trackItems.sort((a, b) => a.start - b.start);
+
+            for (let i = 0; i < trackItems.length - 1; i++) {
+                const current = trackItems[i];
+                const next = trackItems[i + 1];
+
+                const currentEnd = current.start + current.duration;
+
+                if (currentEnd > next.start) {
+                    // Overlap detected!
+                    const overlapAmount = currentEnd - next.start;
+
+                    const currentEl = document.querySelector(`.timeline-item[data-id="${current.id}"]`);
+                    const nextEl = document.querySelector(`.timeline-item[data-id="${next.id}"]`);
+
+                    if (currentEl) {
+                        currentEl.classList.add('overlapping');
+                        const indicator = document.createElement('div');
+                        indicator.className = 'overlap-indicator';
+                        indicator.textContent = `⚠ -${this.formatTime(overlapAmount)}`;
+                        currentEl.appendChild(indicator);
+                    }
+
+                    if (nextEl) {
+                        nextEl.classList.add('overlapping');
+                    }
+                }
+            }
+        });
+    }
+
+    /**
+     * Generate script from timeline
+     */
+    generateScript() {
+        if (this.items.length === 0) {
+            alert('⚠️ Timeline is empty! Add some media first.');
+            return '';
+        }
+
+        // Sort items by start time
+        const sortedItems = [...this.items].sort((a, b) => a.start - b.start);
+
+        let script = ''; // Generated script text
+        let lastEndTime = 0;
+
+        sortedItems.forEach((item, index) => {
+            // Add text gap if there's time between items
+            if (item.start > lastEndTime && index > 0) {
+                const pauseTime = item.start - lastEndTime;
+                script += `\n((PAUSE - ${this.formatTime(pauseTime)}))\n`;
+            }
+
+            // Generate command based on type
+            switch (item.type) {
+                case 'video':
+                    script += `((TAKE VTR - "${item.filename}" - ${this.formatTime(item.duration)}))\n`;
+                    break;
+
+                case 'graphics':
+                    script += `((GFX ON - "${item.filename}" - ${this.formatTime(item.duration)}))\n`;
+                    break;
+
+                case 'audio':
+                    script += `((AUDIO - "${item.filename}" - ${this.formatTime(item.duration)}))\n`;
+                    break;
+
+                case 'text':
+                    script += `${item.text || '[Voiceover text here]'}\n`;
+                    break;
+            }
+
+            lastEndTime = item.start + item.duration;
+        });
+
+        // Add GFX OFF commands for all graphics
+        const graphicsItems = sortedItems.filter(i => i.type === 'graphics');
+        graphicsItems.forEach(item => {
+            const offTime = item.start + item.duration;
+            // TODO: Insert GFX OFF at correct position
+            // For now, append at end
+            script += `((GFX OFF))\n`;
+        });
+
+        console.log('[TIMELINE] Generated script:', script);
+        return script;
+    }
+
+    /**
+     * Clear entire timeline
+     */
+    clearTimeline() {
+        if (this.items.length === 0) return;
+
+        if (!confirm('⚠️ Clear entire timeline?\n\nThis will remove all items. This action cannot be undone.')) {
+            return;
+        }
+
+        document.querySelectorAll('.timeline-item').forEach(item => item.remove());
+        this.items = [];
+        this.selectedItem = null;
+        this.updateStats();
+
+        console.log('[TIMELINE] Timeline cleared');
+    }
+
+    /**
+     * Zoom in/out
+     */
+    zoom(direction) {
+        if (direction === 'in') {
+            this.zoomLevel = Math.min(2.0, this.zoomLevel + 0.25);
+        } else {
+            this.zoomLevel = Math.max(0.5, this.zoomLevel - 0.25);
+        }
+
+        document.getElementById('zoom-level').textContent = `${Math.round(this.zoomLevel * 100)}%`;
+
+        // TODO: Implement actual zoom scaling
+        console.log('[TIMELINE] Zoom level:', this.zoomLevel);
+    }
+
+    /**
+     * Update timeline statistics
+     */
+    updateStats() {
+        const itemCount = this.items.length;
+        const totalDuration = this.items.reduce((sum, item) => {
+            return Math.max(sum, item.start + item.duration);
+        }, 0);
+
+        document.getElementById('timeline-item-count').textContent = itemCount;
+        document.getElementById('timeline-total-duration').textContent = this.formatTime(totalDuration);
+    }
+
+    /**
+     * Setup control buttons
+     */
+    setupControlButtons() {
+        // Clear timeline
+        const btnClear = document.getElementById('btn-clear-timeline');
+        if (btnClear) {
+            btnClear.addEventListener('click', () => this.clearTimeline());
+        }
+
+        // Generate script
+        const btnGenerate = document.getElementById('btn-generate-script');
+        if (btnGenerate) {
+            btnGenerate.addEventListener('click', () => {
+                const script = this.generateScript();
+                if (script) {
+                    // Copy to clipboard
+                    navigator.clipboard.writeText(script).then(() => {
+                        alert('✅ Script generated and copied to clipboard!');
+                    });
+                }
+            });
+        }
+
+        // Zoom controls
+        document.getElementById('zoom-in')?.addEventListener('click', () => this.zoom('in'));
+        document.getElementById('zoom-out')?.addEventListener('click', () => this.zoom('out'));
+    }
+
+    /**
+     * Format seconds to MM:SS
+     */
+    formatTime(seconds) {
+        const mins = Math.floor(seconds / 60);
+        const secs = Math.floor(seconds % 60);
+        return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+    }
+
+    /**
+     * Destroy timeline (cleanup)
+     */
+    destroy() {
+        this.items = [];
+        this.selectedItem = null;
+        console.log('[TIMELINE] Timeline destroyed');
+    }
+}
+
+// Export for use in iNEWSApp
+window.TimelineBuilder = TimelineBuilder;

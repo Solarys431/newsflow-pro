@@ -16,6 +16,10 @@ class iNEWSApp {
         this.rundownItems = [];
         this.mediaAssets = [];
 
+        // Timeline Builder
+        this.timelineBuilder = null;
+        this.currentMode = 'text'; // 'text' or 'timeline'
+
         // Expose globally
         window.app = this;
     }
@@ -1286,6 +1290,39 @@ class iNEWSApp {
      * EVENT HANDLERS
      */
     setupEventHandlers() {
+        // ==== TIMELINE BUILDER ====
+        // Initialize Timeline Builder
+        if (typeof TimelineBuilder !== 'undefined') {
+            this.timelineBuilder = new TimelineBuilder(this);
+            this.timelineBuilder.init();
+            console.log('[APP] Timeline Builder initialized');
+        }
+
+        // Mode Toggle Buttons (Text / Timeline)
+        const btnTextMode = document.getElementById('btn-text-mode');
+        const btnTimelineMode = document.getElementById('btn-timeline-mode');
+
+        if (btnTextMode) {
+            btnTextMode.addEventListener('click', () => this.switchMode('text'));
+        }
+
+        if (btnTimelineMode) {
+            btnTimelineMode.addEventListener('click', () => this.switchMode('timeline'));
+        }
+
+        // Global mouse handlers for timeline drag & resize
+        document.addEventListener('mousemove', (e) => {
+            if (this.timelineBuilder) {
+                this.timelineBuilder.handleMouseMove(e);
+            }
+        });
+
+        document.addEventListener('mouseup', (e) => {
+            if (this.timelineBuilder) {
+                this.timelineBuilder.handleMouseUp(e);
+            }
+        });
+
         // Toolbar buttons
         document.querySelectorAll('.toolbar-btn').forEach(btn => {
             btn.addEventListener('click', (e) => {
@@ -1768,6 +1805,47 @@ class iNEWSApp {
         const progressEl = document.getElementById('upload-progress');
         progressEl.querySelector('.upload-percent').textContent = `${percent}%`;
         progressEl.querySelector('.progress-fill').style.width = `${percent}%`;
+    }
+
+    /**
+     * TIMELINE MODE SWITCHING
+     */
+    switchMode(mode) {
+        if (mode === this.currentMode) return;
+
+        const scriptSections = document.getElementById('script-sections');
+        const timelineBuilder = document.getElementById('timeline-builder');
+        const btnTextMode = document.getElementById('btn-text-mode');
+        const btnTimelineMode = document.getElementById('btn-timeline-mode');
+
+        if (mode === 'text') {
+            // Switch to TEXT mode
+            if (scriptSections) scriptSections.style.display = 'block';
+            if (timelineBuilder) timelineBuilder.style.display = 'none';
+            if (btnTextMode) btnTextMode.classList.add('active');
+            if (btnTimelineMode) btnTimelineMode.classList.remove('active');
+
+            this.currentMode = 'text';
+            console.log('[APP] Switched to TEXT mode');
+
+        } else if (mode === 'timeline') {
+            // Switch to TIMELINE mode
+            if (scriptSections) scriptSections.style.display = 'none';
+            if (timelineBuilder) timelineBuilder.style.display = 'flex';
+            if (btnTextMode) btnTextMode.classList.remove('active');
+            if (btnTimelineMode) btnTimelineMode.classList.add('active');
+
+            this.currentMode = 'timeline';
+
+            // Refresh media library drag & drop after media loaded
+            if (this.timelineBuilder) {
+                setTimeout(() => {
+                    this.timelineBuilder.setupMediaLibraryDragDrop();
+                }, 100);
+            }
+
+            console.log('[APP] Switched to TIMELINE mode');
+        }
     }
 
     /**
