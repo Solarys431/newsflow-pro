@@ -7,9 +7,9 @@ class TimelineBuilder {
     constructor(app) {
         this.app = app; // Reference to iNEWSApp instance
         this.items = [];
-        this.pixelsPerSecond = 15; // 15px = 1 secondo (scalabile con zoom)
+        this.pixelsPerSecond = 25; // 25px = 1 secondo (scalabile con zoom)
         this.totalDuration = 60; // 60 secondi = 1 minuto timeline iniziale
-        this.zoomLevel = 1.0; // 100%
+        this.zoomLevel = 1.5; // 150% default zoom
         this.selectedItem = null;
         this.isDragging = false;
         this.isResizing = false;
@@ -402,12 +402,11 @@ class TimelineBuilder {
         item.innerHTML = `
             <div class="timeline-item-content">
                 <div class="item-header">
-                    <i class="fas ${iconMap[itemData.type]} item-type-icon"></i>
                     <span class="item-name">${itemData.originalFilename}</span>
                 </div>
                 <div class="item-footer">
-                    <span class="item-duration">${this.formatTime(itemData.duration)}</span>
                     <span class="item-start-time">${this.formatTime(itemData.start)}</span>
+                    <span class="item-duration">${this.formatTime(itemData.duration)}</span>
                 </div>
             </div>
             <div class="resize-handle resize-handle-left"></div>
@@ -854,28 +853,12 @@ class TimelineBuilder {
 
         if (ruler) {
             ruler.style.minWidth = `${scaledWidth}px`;
-            ruler.style.transform = `scaleX(${this.zoomLevel})`;
-            ruler.style.transformOrigin = 'left center';
-
-            // Compensate label distortion by counter-scaling
-            const labels = ruler.querySelectorAll('.timecode-label');
-            labels.forEach(label => {
-                label.style.transform = `scaleX(${1 / this.zoomLevel})`;
-                label.style.transformOrigin = 'left center';
-            });
+            ruler.style.transform = 'none';
         }
 
         tracks.forEach(track => {
             track.style.minWidth = `${scaledWidth}px`;
-            track.style.transform = `scaleX(${this.zoomLevel})`;
-            track.style.transformOrigin = 'left center';
-
-            // Compensate item distortion by counter-scaling
-            const items = track.querySelectorAll('.timeline-item');
-            items.forEach(item => {
-                item.style.transform = `scaleX(${1 / this.zoomLevel})`;
-                item.style.transformOrigin = 'left center';
-            });
+            track.style.transform = 'none';
         });
 
         console.log('[TIMELINE] Applied zoom:', this.zoomLevel, 'scaled width:', scaledWidth);
