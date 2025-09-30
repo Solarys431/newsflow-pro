@@ -489,54 +489,64 @@ router.delete('/ftp/:filename', asyncHandler(async (req, res) => {
 }));
 
 // GET /api/media/stream/:filename - Stream video from CasparCG via FTP
+// Usa cache locale per evitare "Premature close" quando si cambia preview rapidamente
 router.get('/stream/:filename', asyncHandler(async (req, res) => {
     const { filename } = req.params;
 
     try {
-        // Verifica se il file esiste localmente
+        // 1. Controlla se esiste nel media path locale (upload diretti)
         const localPath = path.join(config.media.uploadPath, filename);
         const existsLocally = await fs.pathExists(localPath);
 
         if (existsLocally) {
-            // Serve il file locale
-            Logger.info('MEDIA', `Streaming local file: ${filename}`);
-            res.sendFile(path.resolve(localPath));
-        } else {
-            // Scarica da CasparCG via FTP e streamma
-            Logger.info('MEDIA', `Streaming from CasparCG via FTP: ${filename}`);
-
-            if (!config.ftp.enabled) {
-                throw new AppError('FTP is not configured', 503);
-            }
-
-            // Imposta headers appropriati
-            const ext = path.extname(filename).toLowerCase();
-            let contentType = 'application/octet-stream';
-
-            if (ext === '.mp4') contentType = 'video/mp4';
-            else if (ext === '.mov') contentType = 'video/quicktime';
-            else if (ext === '.avi') contentType = 'video/x-msvideo';
-            else if (ext === '.mkv') contentType = 'video/x-matroska';
-            else if (ext === '.wav') contentType = 'audio/wav';
-            else if (ext === '.mp3') contentType = 'audio/mpeg';
-
-            res.setHeader('Content-Type', contentType);
-            res.setHeader('Accept-Ranges', 'bytes');
-            res.setHeader('Content-Disposition', `inline; filename="${filename}"`);
-
-            // Streamma direttamente dalla connessione FTP alla risposta HTTP
-            await FTPService.downloadFile(filename, res);
+            Logger.info('MEDIA', `Streaming from local storage: ${filename}`);
+            return res.sendFile(path.resolve(localPath));
         }
+
+        // 2. Se non esiste localmente, scarica da CasparCG via FTP in CACHE
+        if (!config.ftp.enabled) {
+            throw new AppError('File not found locally and FTP is not configured', 404);
+        }
+
+        Logger.info('MEDIA', `Fetching from CasparCG: ${filename}`);
+
+        // Directory cache per file remoti
+        const cacheDir = path.join(config.media.uploadPath, '.cache');
+
+        // Scarica in cache (o recupera dalla cache se già presente)
+        const cachedFilePath = await FTPService.downloadToCache(filename, cacheDir);
+
+        // Ora servi il file dalla cache
+        Logger.info('MEDIA', `Streaming from cache: ${filename}`);
+        return res.sendFile(path.resolve(cachedFilePath));
+
     } catch (error) {
         Logger.error('MEDIA', `Streaming error: ${error.message}`, { filename });
 
         if (!res.headersSent) {
             res.status(404).json({
                 error: 'File not found',
-                message: error.message
+                message: error.message,
+                filename
             });
         }
     }
+}));
+
+// POST /api/media/cache/clean - Pulisce la cache dei file remoti
+router.post('/cache/clean', asyncHandler(async (req, res) => {
+    Logger.info('MEDIA', 'Manual cache cleanup requested');
+
+    const cacheDir = path.join(config.media.uploadPath, '.cache');
+    const maxSizeMB = req.body.maxSizeMB || 500;
+
+    const result = await FTPService.cleanCache(cacheDir, maxSizeMB);
+
+    res.json({
+        success: true,
+        message: 'Cache cleanup completed',
+        ...result
+    });
 }));
 
 // Helper function to extract video metadata (duration, resolution)

@@ -124,6 +124,9 @@ media/*.mp3
 media/*.wav
 media/*.flac
 
+# Media cache directory (FTP downloads)
+media/.cache/
+
 # Keep media directory but ignore large files
 !media/.gitkeep
 

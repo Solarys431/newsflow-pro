@@ -357,8 +357,84 @@ class FTPService extends EventEmitter {
     }
 
     /**
-     * Download file da CasparCG via FTP
-     * Usa una connessione dedicata per evitare conflitti con download concorrenti
+     * Download file da CasparCG via FTP in cache locale
+     * Risolve il problema "Premature close" quando si cambia preview rapidamente
+     * @param {string} filename - Nome del file da scaricare
+     * @param {string} cacheDir - Directory cache locale
+     * @returns {string} - Path del file scaricato in cache
+     */
+    async downloadToCache(filename, cacheDir) {
+        if (!config.ftp.enabled) {
+            throw new Error('FTP is disabled');
+        }
+
+        // Assicurati che la cache directory esista
+        await fs.ensureDir(cacheDir);
+
+        const cachePath = path.join(cacheDir, filename);
+
+        // Se il file esiste già in cache, restituiscilo
+        if (await fs.pathExists(cachePath)) {
+            Logger.debug('FTP', `File found in cache: ${filename}`);
+            return cachePath;
+        }
+
+        Logger.info('FTP', `Downloading to cache: ${filename}`);
+
+        // Crea un client FTP dedicato per questo download
+        const ftp = require('basic-ftp');
+        const dedicatedClient = new ftp.Client();
+        dedicatedClient.ftp.verbose = false;
+
+        // Download in file temporaneo prima, poi rinomina
+        const tempPath = `${cachePath}.tmp`;
+
+        try {
+            // Connessione con timeout
+            await Promise.race([
+                dedicatedClient.access({
+                    host: config.ftp.host,
+                    port: config.ftp.port,
+                    user: config.ftp.user,
+                    password: config.ftp.password,
+                    secure: config.ftp.secure,
+                    secureOptions: {
+                        rejectUnauthorized: false // Accept self-signed certificates
+                    }
+                }),
+                new Promise((_, reject) =>
+                    setTimeout(() => reject(new Error('FTP connection timeout')), 15000)
+                )
+            ]);
+
+            const remotePath = `${config.ftp.mediaPath}${filename}`;
+
+            // Download nel file temporaneo
+            await dedicatedClient.downloadTo(fs.createWriteStream(tempPath), remotePath);
+
+            // Rinomina da .tmp al nome finale (atomic operation)
+            await fs.rename(tempPath, cachePath);
+
+            Logger.info('FTP', `✅ File cached successfully: ${filename}`);
+
+            return cachePath;
+
+        } catch (error) {
+            // Cleanup file temporaneo in caso di errore
+            await fs.remove(tempPath).catch(() => {});
+
+            Logger.error('FTP', `Failed to download file: ${filename}`, { error: error.message });
+            throw error;
+        } finally {
+            // Chiudi sempre la connessione dedicata
+            dedicatedClient.close();
+        }
+    }
+
+    /**
+     * Download file da CasparCG via FTP direttamente in uno stream
+     * DEPRECATO: Usare downloadToCache() per evitare "Premature close"
+     * Mantenuto per backward compatibility
      */
     async downloadFile(filename, destinationStream) {
         if (!config.ftp.enabled) {
@@ -404,6 +480,76 @@ class FTPService extends EventEmitter {
         } finally {
             // Chiudi sempre la connessione dedicata
             dedicatedClient.close();
+        }
+    }
+
+    /**
+     * Pulisce la cache eliminando file non usati di recente
+     * LRU (Least Recently Used) cache cleanup
+     * @param {string} cacheDir - Directory cache
+     * @param {number} maxSizeMB - Dimensione massima cache in MB
+     */
+    async cleanCache(cacheDir, maxSizeMB = 500) {
+        try {
+            if (!await fs.pathExists(cacheDir)) {
+                return { cleaned: 0, freedMB: 0 };
+            }
+
+            const files = await fs.readdir(cacheDir);
+            if (files.length === 0) return { cleaned: 0, freedMB: 0 };
+
+            // Ottieni info su tutti i file con ultimo accesso
+            const filesWithStats = await Promise.all(
+                files
+                    .filter(f => !f.endsWith('.tmp')) // Ignora file temporanei
+                    .map(async (file) => {
+                        const filePath = path.join(cacheDir, file);
+                        const stats = await fs.stat(filePath);
+                        return {
+                            path: filePath,
+                            name: file,
+                            size: stats.size,
+                            atime: stats.atime // Last access time
+                        };
+                    })
+            );
+
+            // Calcola dimensione totale cache
+            const totalSize = filesWithStats.reduce((sum, f) => sum + f.size, 0);
+            const totalSizeMB = totalSize / (1024 * 1024);
+
+            if (totalSizeMB <= maxSizeMB) {
+                Logger.debug('FTP', `Cache size OK: ${totalSizeMB.toFixed(2)}MB / ${maxSizeMB}MB`);
+                return { cleaned: 0, freedMB: 0 };
+            }
+
+            // Ordina per ultimo accesso (più vecchi prima)
+            filesWithStats.sort((a, b) => a.atime - b.atime);
+
+            // Elimina file più vecchi finché non scendiamo sotto il limite
+            let currentSize = totalSize;
+            let cleaned = 0;
+            let freedBytes = 0;
+
+            for (const file of filesWithStats) {
+                if (currentSize / (1024 * 1024) <= maxSizeMB * 0.8) break; // 80% del limite
+
+                await fs.remove(file.path);
+                currentSize -= file.size;
+                freedBytes += file.size;
+                cleaned++;
+
+                Logger.debug('FTP', `Cache cleanup: removed ${file.name} (${(file.size / 1024 / 1024).toFixed(2)}MB)`);
+            }
+
+            const freedMB = freedBytes / (1024 * 1024);
+            Logger.info('FTP', `✅ Cache cleanup: removed ${cleaned} files, freed ${freedMB.toFixed(2)}MB`);
+
+            return { cleaned, freedMB };
+
+        } catch (error) {
+            Logger.error('FTP', `Cache cleanup failed: ${error.message}`);
+            return { cleaned: 0, freedMB: 0, error: error.message };
         }
     }
 

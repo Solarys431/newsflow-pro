@@ -666,7 +666,7 @@ class iNEWSApp {
 
         // Find asset
         this.selectedMedia = this.mediaAssets.find(a => a.id === assetId);
-        this.showNotification(`Selezionato: ${this.selectedMedia?.original_filename || 'Media'}`, 'success');
+        // Popup rimosso - feedback visivo già presente tramite classe 'selected'
 
         // Show preview
         this.showMediaPreview(this.selectedMedia);
@@ -734,7 +734,7 @@ class iNEWSApp {
 
         event.target.closest('.media-item')?.classList.add('selected');
         this.selectedGraphic = templateName;
-        this.showNotification(`Selezionata grafica: ${templateName}`, 'success');
+        // Popup rimosso - feedback visivo già presente tramite classe 'selected'
 
         // Show preview
         this.showGraphicPreview(templateName);
@@ -754,6 +754,12 @@ class iNEWSApp {
         previewPlaceholder.style.display = 'none';
         previewInfo.style.display = 'none';
         playerControls.style.display = 'none';
+
+        // IMPORTANTE: Rimuovi tutti gli event handler per evitare errori spurii
+        previewVideo.onerror = null;
+        previewVideo.onloadedmetadata = null;
+        previewGraphic.onerror = null;
+        previewGraphic.onload = null;
 
         if (!asset) {
             previewPlaceholder.style.display = 'flex';
@@ -792,10 +798,10 @@ class iNEWSApp {
             // Handle video loading errors
             previewVideo.onerror = () => {
                 console.error('[PREVIEW] Video load error');
-                this.showNotification('Errore caricamento video', 'error');
+                // Popup rimosso - messaggio visivo nel preview è sufficiente
                 previewPlaceholder.innerHTML = `
                     <i class="fas fa-exclamation-triangle" style="font-size: 48px; color: #ef4444;"></i>
-                    <p style="margin-top: 16px;">Video non disponibile localmente</p>
+                    <p style="margin-top: 16px;">Video non disponibile</p>
                 `;
                 previewPlaceholder.style.display = 'flex';
                 previewVideo.style.display = 'none';
@@ -863,13 +869,24 @@ class iNEWSApp {
         const previewPlaceholder = document.querySelector('.preview-placeholder');
         const previewInfo = document.getElementById('preview-info');
         const previewDuration = document.getElementById('preview-duration');
+        const playerControls = document.getElementById('video-player-controls');
 
         console.log('[PREVIEW] Loading graphic:', templateName);
 
         // Hide all previews first
         previewVideo.style.display = 'none';
+
+        // IMPORTANTE: Rimuovi error handler PRIMA di svuotare src
+        // altrimenti il video.onerror viene triggerato e mostra il triangolo rosso
+        previewVideo.onerror = null;
+        previewVideo.onloadedmetadata = null;
         previewVideo.src = '';
+
         previewPlaceholder.style.display = 'none';
+
+        // IMPORTANTE: Nascondi i controlli video quando mostri una grafica
+        // I controlli play/pause/stop hanno senso solo per video/audio
+        playerControls.style.display = 'none';
 
         // Show graphic preview in iframe
         // Add autoshow parameter to trigger template display
@@ -920,7 +937,8 @@ class iNEWSApp {
         // Error handler
         previewGraphic.onerror = () => {
             console.error('[PREVIEW] Template load error');
-            this.showNotification('Errore caricamento template', 'error');
+            // Popup rimosso - errore loggato in console è sufficiente
+            // L'iframe mostrerà automaticamente errore se template non carica
         };
     }
 
@@ -1217,6 +1235,53 @@ class iNEWSApp {
         }
     }
 
+    async deleteCurrentRundown() {
+        const selector = document.getElementById('show-selector');
+        const rundownId = selector.value;
+
+        if (!rundownId) {
+            this.showNotification('⚠️ Seleziona un rundown da eliminare', 'warning');
+            return;
+        }
+
+        // Get rundown name for confirmation
+        const rundownName = selector.options[selector.selectedIndex].text;
+
+        const confirmDelete = confirm(
+            `⚠️ ATTENZIONE: Eliminazione Rundown\n\n` +
+            `Rundown: ${rundownName}\n\n` +
+            `Questa operazione eliminerà:\n` +
+            `• Il rundown selezionato\n` +
+            `• Tutte le storie associate al rundown\n` +
+            `• Tutti i comandi di automazione\n\n` +
+            `Questa azione è IRREVERSIBILE!\n\n` +
+            `Confermi l'eliminazione?`
+        );
+
+        if (!confirmDelete) return;
+
+        try {
+            const response = await fetch(`${Config.api.baseUrl}/rundown/${rundownId}`, {
+                method: 'DELETE'
+            });
+
+            if (!response.ok) throw new Error('Delete failed');
+
+            this.showNotification('✓ Rundown eliminato con successo', 'success');
+
+            // Reload rundowns and select first available
+            await this.loadRundowns();
+
+            // Clear current rundown
+            this.currentRundown = null;
+            await this.loadRundownData();
+
+        } catch (error) {
+            console.error('Delete rundown error:', error);
+            this.showNotification('❌ Errore eliminazione rundown', 'error');
+        }
+    }
+
     /**
      * EVENT HANDLERS
      */
@@ -1345,6 +1410,22 @@ class iNEWSApp {
         // New Rundown button
         const btnNewRundown = document.getElementById('btn-new-rundown');
         if (btnNewRundown) btnNewRundown.addEventListener('click', () => this.createNewRundown());
+
+        // Delete Rundown button
+        const btnDeleteRundown = document.getElementById('btn-delete-rundown');
+        if (btnDeleteRundown) {
+            btnDeleteRundown.addEventListener('click', () => this.deleteCurrentRundown());
+
+            // Enable/disable delete button based on selection
+            const showSelector = document.getElementById('show-selector');
+            if (showSelector) {
+                const updateDeleteButton = () => {
+                    btnDeleteRundown.disabled = !showSelector.value;
+                };
+                showSelector.addEventListener('change', updateDeleteButton);
+                updateDeleteButton(); // Initial state
+            }
+        }
     }
 
     handleToolbarAction(action) {

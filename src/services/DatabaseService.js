@@ -272,28 +272,27 @@ class DatabaseService {
         const today = new Date().toISOString().split('T')[0];
 
         if (this.mode === 'supabase') {
+            // Get first rundown for today, ordered by creation time
             const { data, error } = await this.client
                 .from('rundowns')
                 .select('*')
                 .eq('air_date', today)
-                .single();
+                .order('created_at', { ascending: false })
+                .limit(1);
 
-            if (error && error.code === 'PGRST116') {
-                // No rundown for today, create one
-                return this.createTodaysRundown();
-            }
             if (error) throw error;
-            return data;
+
+            // If no rundown exists for today, return null instead of creating one
+            // The frontend will handle empty state
+            return data && data.length > 0 ? data[0] : null;
         } else {
             const result = await this.pool.query(
-                'SELECT * FROM rundowns WHERE air_date = $1 LIMIT 1',
+                'SELECT * FROM rundowns WHERE air_date = $1 ORDER BY created_at DESC LIMIT 1',
                 [today]
             );
 
-            if (result.rows.length === 0) {
-                return this.createTodaysRundown();
-            }
-            return result.rows[0];
+            // Return null if no rundown exists for today
+            return result.rows.length > 0 ? result.rows[0] : null;
         }
     }
 
