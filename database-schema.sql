@@ -39,7 +39,10 @@ CREATE TABLE IF NOT EXISTS rundowns (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     created_by VARCHAR(100),
-    metadata JSONB DEFAULT '{}'::jsonb
+    metadata JSONB DEFAULT '{}'::jsonb,
+
+    -- Prevent duplicate rundowns for same show at same time
+    CONSTRAINT rundowns_unique_show_time UNIQUE (show_name, air_date, air_time)
 );
 
 -- Rundown items (stories in rundown)

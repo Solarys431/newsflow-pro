@@ -16,6 +16,7 @@
     /* Brand Colors */
     --inews-red: #E91E63;
     --inews-pink: #EC407A;
+    --accent: #E91E63; /* Primary accent color */
 
     /* Status Colors */
     --color-success: #4CAF50;

@@ -927,7 +927,8 @@ class NewsroomApp {
 }
 
 // Initialize on DOM ready
-document.addEventListener('DOMContentLoaded', () => {
-    window.app = new NewsroomApp();
-    app.init();
-});
+// NOTE: NewsroomApp is deprecated - using iNEWSApp from inews-integrated.js instead
+// document.addEventListener('DOMContentLoaded', () => {
+//     window.app = new NewsroomApp();
+//     app.init();
+// });
