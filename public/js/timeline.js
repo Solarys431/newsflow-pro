@@ -533,52 +533,109 @@ class TimelineBuilder {
             return '';
         }
 
-        // Sort items by start time
-        const sortedItems = [...this.items].sort((a, b) => a.start - b.start);
+        // Separate items by track
+        const videoItems = this.items.filter(i => i.type === 'video').sort((a, b) => a.start - b.start);
+        const graphicsItems = this.items.filter(i => i.type === 'graphics').sort((a, b) => a.start - b.start);
+        const audioItems = this.items.filter(i => i.type === 'audio').sort((a, b) => a.start - b.start);
+        const textItems = this.items.filter(i => i.type === 'text').sort((a, b) => a.start - b.start);
 
-        let script = ''; // Generated script text
-        let lastEndTime = 0;
+        let script = '';
+        let currentVideoIndex = 0;
+        let timelineTime = 0;
 
-        sortedItems.forEach((item, index) => {
-            // Add text gap if there's time between items
-            if (item.start > lastEndTime && index > 0) {
-                const pauseTime = item.start - lastEndTime;
-                script += `\n((PAUSE - ${this.formatTime(pauseTime)}))\n`;
+        // Process each video sequentially
+        videoItems.forEach((video, vidIndex) => {
+            // Add WAIT between videos if needed
+            if (vidIndex > 0 && video.start > timelineTime) {
+                const waitDuration = video.start - timelineTime;
+                script += `((WAIT ${Math.floor(waitDuration)}))\n`;
+                timelineTime = video.start;
             }
 
-            // Generate command based on type
-            switch (item.type) {
-                case 'video':
-                    script += `((TAKE VTR - "${item.filename}" - ${this.formatTime(item.duration)}))\n`;
-                    break;
+            // Add video command
+            script += `((TAKE VTR - "${video.filename}" - ${this.formatTime(video.duration)}))\n`;
 
-                case 'graphics':
-                    script += `((GFX ON - "${item.filename}" - ${this.formatTime(item.duration)}))\n`;
-                    break;
+            const videoStartTime = video.start;
+            const videoEndTime = video.start + video.duration;
 
-                case 'audio':
-                    script += `((AUDIO - "${item.filename}" - ${this.formatTime(item.duration)}))\n`;
-                    break;
+            // Find graphics that appear during this video
+            const overlayGraphics = graphicsItems.filter(g =>
+                g.start >= videoStartTime && g.start < videoEndTime
+            );
 
-                case 'text':
-                    script += `${item.text || '[Voiceover text here]'}\n`;
-                    break;
-            }
+            // Add graphics with proper WAIT timing
+            overlayGraphics.forEach(graphic => {
+                const waitTime = Math.floor(graphic.start - videoStartTime);
 
-            lastEndTime = item.start + item.duration;
+                // Add WAIT command (format: ((WAIT X)) where X is seconds from video start)
+                if (waitTime > 0) {
+                    script += `((WAIT ${waitTime}))\n`;
+                }
+
+                // Add GFX ON command
+                script += `((GFX ON - "${graphic.filename}" - ${this.formatTime(graphic.duration)}))\n`;
+
+                // Add GFX OFF command
+                script += `((GFX OFF))\n`;
+            });
+
+            // Find audio that appears during this video
+            const overlayAudio = audioItems.filter(a =>
+                a.start >= videoStartTime && a.start < videoEndTime
+            );
+
+            overlayAudio.forEach(audio => {
+                const waitTime = Math.floor(audio.start - videoStartTime);
+                if (waitTime > 0) {
+                    script += `((WAIT ${waitTime}))\n`;
+                }
+                script += `((AUDIO - "${audio.filename}" - ${this.formatTime(audio.duration)}))\n`;
+            });
+
+            timelineTime = videoEndTime;
         });
 
-        // Add GFX OFF commands for all graphics
-        const graphicsItems = sortedItems.filter(i => i.type === 'graphics');
-        graphicsItems.forEach(item => {
-            const offTime = item.start + item.duration;
-            // TODO: Insert GFX OFF at correct position
-            // For now, append at end
+        // Add standalone graphics (not during video)
+        const standaloneGraphics = graphicsItems.filter(g => {
+            return !videoItems.some(v => g.start >= v.start && g.start < v.start + v.duration);
+        });
+
+        standaloneGraphics.forEach(graphic => {
+            if (graphic.start > timelineTime) {
+                const waitDuration = graphic.start - timelineTime;
+                script += `((WAIT ${Math.floor(waitDuration)}))\n`;
+                timelineTime = graphic.start;
+            }
+
+            script += `((GFX ON - "${graphic.filename}" - ${this.formatTime(graphic.duration)}))\n`;
             script += `((GFX OFF))\n`;
+            timelineTime = graphic.start + graphic.duration;
+        });
+
+        // Add text items
+        textItems.forEach(item => {
+            if (item.start > timelineTime) {
+                const waitDuration = item.start - timelineTime;
+                script += `((WAIT ${Math.floor(waitDuration)}))\n`;
+                timelineTime = item.start;
+            }
+            script += item.text || '[Voiceover text here]';
+            script += '\n';
         });
 
         console.log('[TIMELINE] Generated script:', script);
         return script;
+    }
+
+    /**
+     * Parse time string to seconds (helper for generateScript)
+     */
+    parseTimeToSeconds(timeStr) {
+        const parts = timeStr.split(':');
+        if (parts.length === 2) {
+            return parseInt(parts[0]) * 60 + parseInt(parts[1]);
+        }
+        return parseInt(timeStr) || 0;
     }
 
     /**
