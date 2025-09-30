@@ -91,55 +91,65 @@ class TimelineBuilder {
      * Setup precision drag indicators (playhead + tooltip)
      */
     setupPrecisionIndicators() {
-        const timelineContent = document.querySelector('.timeline-content');
-        if (!timelineContent) return;
+        // Create playhead indicators for each track
+        const tracks = document.querySelectorAll('.track-content');
 
-        // Create playhead indicator
-        this.dragPlayhead = document.createElement('div');
-        this.dragPlayhead.className = 'timeline-drag-playhead';
+        tracks.forEach(track => {
+            // Create playhead indicator
+            const playhead = document.createElement('div');
+            playhead.className = 'timeline-drag-playhead';
 
-        // Create tooltip
-        this.dragTooltip = document.createElement('div');
-        this.dragTooltip.className = 'timeline-drag-tooltip';
-        this.dragTooltip.textContent = '00:00';
+            // Create tooltip
+            const tooltip = document.createElement('div');
+            tooltip.className = 'timeline-drag-tooltip';
+            tooltip.textContent = '00:00';
 
-        this.dragPlayhead.appendChild(this.dragTooltip);
-        timelineContent.appendChild(this.dragPlayhead);
+            playhead.appendChild(tooltip);
+            track.appendChild(playhead);
+        });
 
-        console.log('[TIMELINE] Precision indicators created');
+        console.log('[TIMELINE] Precision indicators created for all tracks');
     }
 
     /**
      * Update playhead position during drag
      */
     updateDragPlayhead(track, clientX) {
-        if (!this.dragPlayhead) return;
+        // Find playhead for this specific track
+        const playhead = track.querySelector('.timeline-drag-playhead');
+        if (!playhead) return;
 
+        const tooltip = playhead.querySelector('.timeline-drag-tooltip');
         const trackRect = track.getBoundingClientRect();
         const relativeX = clientX - trackRect.left;
 
-        // Calculate time position considering zoom
-        const timeSeconds = Math.floor(relativeX / this.pixelsPerSecond / this.zoomLevel);
+        // Calculate time position considering zoom and track width
+        const trackWidth = trackRect.width;
+        const timeSeconds = Math.floor((relativeX / trackWidth) * this.totalDuration);
         const clampedTime = Math.max(0, Math.min(timeSeconds, this.totalDuration));
 
         // Update playhead position
         const leftPercent = (clampedTime / this.totalDuration) * 100;
-        this.dragPlayhead.style.left = `${leftPercent}%`;
+        playhead.style.left = `${leftPercent}%`;
 
         // Update tooltip text
-        this.dragTooltip.textContent = this.formatTime(clampedTime);
+        if (tooltip) {
+            tooltip.textContent = this.formatTime(clampedTime);
+        }
 
         // Show indicator
-        this.dragPlayhead.classList.add('active');
+        playhead.classList.add('active');
     }
 
     /**
      * Hide playhead indicator
      */
     hideDragPlayhead() {
-        if (this.dragPlayhead) {
-            this.dragPlayhead.classList.remove('active');
-        }
+        // Hide all playheads
+        const playheads = document.querySelectorAll('.timeline-drag-playhead');
+        playheads.forEach(playhead => {
+            playhead.classList.remove('active');
+        });
     }
 
     /**
@@ -481,6 +491,9 @@ class TimelineBuilder {
             const leftPercent = (newLeft / trackRect.width) * 100;
             this.selectedItem.style.left = `${leftPercent}%`;
 
+            // Show precision playhead during drag
+            this.updateDragPlayhead(track, e.clientX - this.dragOffset + (this.selectedItem.offsetWidth / 2));
+
         } else if (this.isResizing && this.selectedItem && this.resizeHandle) {
             const track = this.selectedItem.parentElement;
             const trackRect = track.getBoundingClientRect();
@@ -518,6 +531,9 @@ class TimelineBuilder {
         if (this.isDragging && this.selectedItem) {
             this.isDragging = false;
             this.selectedItem.classList.remove('dragging');
+
+            // Hide precision playhead
+            this.hideDragPlayhead();
 
             // Update item data
             const newStart = Math.floor((parseFloat(this.selectedItem.style.left) / 100) * this.totalDuration);
