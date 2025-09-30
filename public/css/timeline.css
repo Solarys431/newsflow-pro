@@ -612,7 +612,7 @@ button, .timeline-item, .track-content {
     width: 2px;
     background: #ef4444;
     pointer-events: none;
-    z-index: 9999;
+    z-index: 99999;
     opacity: 0;
     transition: opacity 0.1s;
     box-shadow: 0 0 8px rgba(239, 68, 68, 0.6);
@@ -623,7 +623,10 @@ button, .timeline-item, .track-content {
 }
 
 .timeline-drag-tooltip {
-    position: fixed;
+    position: absolute;
+    top: -35px;
+    left: 50%;
+    transform: translateX(-50%);
     background: #ef4444;
     color: white;
     padding: 6px 12px;
@@ -634,9 +637,7 @@ button, .timeline-item, .track-content {
     white-space: nowrap;
     pointer-events: none;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-    z-index: 10000;
-    opacity: 0;
-    transition: opacity 0.1s;
+    z-index: 100000;
 }
 
 .timeline-drag-tooltip::after {
@@ -647,4 +648,158 @@ button, .timeline-item, .track-content {
     transform: translateX(-50%);
     border: 6px solid transparent;
     border-top-color: #ef4444;
+}
+
+/* Show tooltip BELOW on VIDEO and GRAPHICS tracks to avoid clipping */
+.timeline-track[data-track="video"] {
+    position: relative;
+    z-index: 1000;
+}
+
+.timeline-track[data-track="video"] .timeline-drag-tooltip {
+    top: auto;
+    bottom: -35px;
+}
+
+.timeline-track[data-track="video"] .timeline-drag-tooltip::after {
+    top: auto;
+    bottom: 100%;
+    border-top-color: transparent;
+    border-bottom-color: #ef4444;
+}
+
+.timeline-track[data-track="graphics"] {
+    position: relative;
+    z-index: 999;
+}
+
+.timeline-track[data-track="graphics"] .timeline-drag-tooltip {
+    top: auto;
+    bottom: -35px;
+}
+
+.timeline-track[data-track="graphics"] .timeline-drag-tooltip::after {
+    top: auto;
+    bottom: 100%;
+    border-top-color: transparent;
+    border-bottom-color: #ef4444;
+}
+
+/* ============================================
+   TIMELINE PLAYBACK SYSTEM
+   ============================================ */
+
+/* Animated Playhead */
+.timeline-playhead {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    width: 2px;
+    pointer-events: none;
+    z-index: 100000;
+    transition: left 0.05s linear;
+}
+
+.timeline-playhead .playhead-line {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    width: 2px;
+    background: #3b82f6;
+    box-shadow: 0 0 10px rgba(59, 130, 246, 0.8);
+}
+
+.timeline-playhead .playhead-handle {
+    position: absolute;
+    top: -6px;
+    left: -6px;
+    width: 14px;
+    height: 14px;
+    background: #3b82f6;
+    border: 2px solid white;
+    border-radius: 50%;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+    cursor: grab;
+    pointer-events: auto;
+}
+
+.timeline-playhead .playhead-handle:active {
+    cursor: grabbing;
+}
+
+/* Transport Controls */
+.timeline-transport {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.transport-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 8px 16px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text-primary);
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.transport-btn:hover {
+    background: var(--bg-tertiary);
+    border-color: var(--accent);
+    transform: translateY(-1px);
+}
+
+.transport-btn.active {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: white;
+}
+
+.transport-btn i {
+    font-size: 14px;
+}
+
+/* Play button (green) */
+.transport-btn.play {
+    background: #10b981;
+    border-color: #10b981;
+    color: white;
+}
+
+.transport-btn.play:hover {
+    background: #059669;
+    border-color: #059669;
+}
+
+/* Pause button (yellow) */
+.transport-btn.pause {
+    background: #f59e0b;
+    border-color: #f59e0b;
+    color: white;
+}
+
+.transport-btn.pause:hover {
+    background: #d97706;
+    border-color: #d97706;
+}
+
+/* Stop button (red) */
+.transport-btn.stop {
+    background: #ef4444;
+    border-color: #ef4444;
+    color: white;
+}
+
+.transport-btn.stop:hover {
+    background: #dc2626;
+    border-color: #dc2626;
 }

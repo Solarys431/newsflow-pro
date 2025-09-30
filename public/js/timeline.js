@@ -33,7 +33,36 @@ class TimelineBuilder {
         this.applyZoom(); // Apply initial zoom level
         this.updateStats();
 
+        // Initialize playback engine
+        this.initPlaybackEngine();
+
         console.log('[TIMELINE] Timeline ready!');
+    }
+
+    /**
+     * Initialize timeline playback engine
+     */
+    initPlaybackEngine() {
+        this.playback = new TimelinePlayback(this);
+
+        // Connect transport buttons
+        const playBtn = document.getElementById('timeline-play-btn');
+        const pauseBtn = document.getElementById('timeline-pause-btn');
+        const stopBtn = document.getElementById('timeline-stop-btn');
+
+        if (playBtn) {
+            playBtn.addEventListener('click', () => this.playback.play());
+        }
+
+        if (pauseBtn) {
+            pauseBtn.addEventListener('click', () => this.playback.pause());
+        }
+
+        if (stopBtn) {
+            stopBtn.addEventListener('click', () => this.playback.stop());
+        }
+
+        console.log('[TIMELINE] Playback engine connected');
     }
 
     /**
@@ -132,19 +161,9 @@ class TimelineBuilder {
         const leftPercent = (clampedTime / this.totalDuration) * 100;
         playhead.style.left = `${leftPercent}%`;
 
-        // Update tooltip position using fixed positioning (relative to viewport)
+        // Update tooltip text
         if (tooltip) {
             tooltip.textContent = this.formatTime(clampedTime);
-
-            // Get playhead position in viewport
-            const playheadRect = playhead.getBoundingClientRect();
-            const playheadCenterX = playheadRect.left + (playheadRect.width / 2);
-
-            // Position tooltip above playhead
-            tooltip.style.left = `${playheadCenterX}px`;
-            tooltip.style.top = `${trackRect.top - 35}px`;
-            tooltip.style.transform = 'translateX(-50%)';
-            tooltip.style.opacity = '1';
         }
 
         // Show indicator
@@ -155,16 +174,10 @@ class TimelineBuilder {
      * Hide playhead indicator
      */
     hideDragPlayhead() {
-        // Hide all playheads and tooltips
+        // Hide all playheads
         const playheads = document.querySelectorAll('.timeline-drag-playhead');
         playheads.forEach(playhead => {
             playhead.classList.remove('active');
-
-            // Hide tooltip
-            const tooltip = playhead.querySelector('.timeline-drag-tooltip');
-            if (tooltip) {
-                tooltip.style.opacity = '0';
-            }
         });
     }
 
@@ -856,6 +869,13 @@ class TimelineBuilder {
             track.style.minWidth = `${scaledWidth}px`;
             track.style.transform = `scaleX(${this.zoomLevel})`;
             track.style.transformOrigin = 'left center';
+
+            // Compensate item distortion by counter-scaling
+            const items = track.querySelectorAll('.timeline-item');
+            items.forEach(item => {
+                item.style.transform = `scaleX(${1 / this.zoomLevel})`;
+                item.style.transformOrigin = 'left center';
+            });
         });
 
         console.log('[TIMELINE] Applied zoom:', this.zoomLevel, 'scaled width:', scaledWidth);
