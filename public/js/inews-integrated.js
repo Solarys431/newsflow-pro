@@ -1393,12 +1393,19 @@ class iNEWSApp {
         }
 
         try {
+            const payload = { rundown_id: this.currentRundown.id };
+
+            // Only send duration from timeline if we're CURRENTLY in timeline mode AND story has timeline data
+            if (this.currentMode === 'timeline' && this.timelineBuilder && this.timelineBuilder.items.length > 0) {
+                payload.estimated_duration = this.timelineBuilder.items.reduce((sum, item) => {
+                    return Math.max(sum, item.start + item.duration);
+                }, 0);
+            }
+
             const response = await fetch(`${Config.api.baseUrl}/stories/${this.currentStory.id}/send-to-rundown`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    rundown_id: this.currentRundown.id
-                })
+                body: JSON.stringify(payload)
             });
 
             if (!response.ok) throw new Error('Send failed');
@@ -1462,10 +1469,21 @@ class iNEWSApp {
         }
 
         try {
+            // Calculate duration from timeline if in timeline mode
+            let estimatedDuration = null;
+            if (this.timelineBuilder && this.timelineBuilder.items.length > 0) {
+                estimatedDuration = this.timelineBuilder.items.reduce((sum, item) => {
+                    return Math.max(sum, item.start + item.duration);
+                }, 0);
+            }
+
             const response = await fetch(`${Config.api.baseUrl}/stories/${this.currentStory.id}/send-to-rundown`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ rundown_id: rundownId })
+                body: JSON.stringify({
+                    rundown_id: rundownId,
+                    estimated_duration: estimatedDuration
+                })
             });
 
             if (!response.ok) throw new Error('Send failed');

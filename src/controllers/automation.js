@@ -73,7 +73,7 @@ router.post('/execute/:itemId', asyncHandler(async (req, res) => {
 
                 case 'AUDIO':
                     const audioFilename = command.parameters.filename;
-                    result = await CasparService.playMedia(1, 2, audioFilename);
+                    result = await CasparService.playVideo(1, 10, audioFilename);
                     break;
 
                 case 'AUDIO_SOT':

@@ -42,16 +42,21 @@ function parseScriptToCommands(script) {
                 textBuffer = '';
             }
 
-            // Parse the automation command
+            // IMPORTANT: Check if this is a TAKE_VTR and close previous video context BEFORE parsing
+            // This ensures currentTime is updated before the command is created
+            const content = trimmedLine.slice(2, -2).trim();
+            const commandType = content.split(' - ')[0].toUpperCase();
+
+            if ((commandType === 'TAKE VTR' || commandType === 'TAKE PKG') && videoContext) {
+                currentTime = videoContext.endTime;
+                videoContext = null;
+            }
+
+            // Parse the automation command with updated currentTime
             const command = parseAutomationCommand(trimmedLine, currentTime);
             if (command) {
                 // Handle TAKE VTR - starts a potential video context
                 if (command.type === 'TAKE_VTR') {
-                    // If we were in video context, close it first
-                    if (videoContext) {
-                        currentTime = videoContext.endTime;
-                    }
-
                     videoContext = {
                         startTime: currentTime,
                         duration: command.duration,
@@ -62,24 +67,29 @@ function parseScriptToCommands(script) {
                 }
                 // Handle WAIT - could be timing for overlays or standalone
                 else if (command.type === 'WAIT') {
-                    // Check if next command is GFX and we're in video context
-                    let nextIsGfx = false;
+                    // Check if next command is GFX or AUDIO and we're in video context
+                    let nextIsOverlay = false;
                     if (i + 1 < lines.length) {
                         const nextLine = lines[i + 1].trim();
-                        if (nextLine.toUpperCase().includes('GFX') && videoContext) {
-                            nextIsGfx = true;
+                        if ((nextLine.toUpperCase().includes('GFX') || nextLine.toUpperCase().includes('AUDIO')) && videoContext) {
+                            nextIsOverlay = true;
                         }
                     }
 
-                    if (nextIsGfx && videoContext) {
-                        // This WAIT sets timing for next GFX within video
+                    if (nextIsOverlay && videoContext) {
+                        // This WAIT sets timing for next overlay (GFX or AUDIO) within video
                         // Calculate time from video start
                         currentTime = videoContext.startTime + command.duration;
                         // Don't add WAIT to commands - it's just for timing
                     } else if (videoContext) {
-                        // WAIT after GFX ON means duration for GFX display
-                        // Update time but don't add WAIT
-                        currentTime = currentTime + command.duration;
+                        // WAIT after overlays finished - close video context first
+                        currentTime = videoContext.endTime;
+                        videoContext = null;
+
+                        // Then add standalone WAIT
+                        command.start_time = currentTime;
+                        commands.push(command);
+                        currentTime += command.duration;
                     } else {
                         // Standalone WAIT - add it
                         commands.push(command);
@@ -105,9 +115,17 @@ function parseScriptToCommands(script) {
                     }
                     commands.push(command);
 
-                    // After GFX OFF, end video context
-                    currentTime = videoContext.endTime;
-                    videoContext = null;
+                    // DON'T close video context yet - there might be more overlays (like AUDIO)
+                    // Video context will be closed by next video or end of overlays
+                }
+                // Handle AUDIO during video
+                else if (command.type === 'AUDIO' && videoContext) {
+                    // Audio during video - use current time (set by previous WAIT)
+                    command.start_time = currentTime;
+                    commands.push(command);
+                    // Don't close video context - audio plays alongside video
+                    // Move time forward but stay within video
+                    currentTime = Math.min(currentTime + command.duration, videoContext.endTime);
                 }
                 // Other commands
                 else {
@@ -215,7 +233,7 @@ function parseAutomationCommand(commandLine, startTime) {
                 type: 'AUDIO',
                 start_time: startTime,
                 duration: audioDuration,
-                caspar_command: `PLAY 1-2 "${audioFilename}"`,
+                caspar_command: `PLAY 1-10 "${audioFilename}"`,
                 parameters: { filename: audioFilename }
             };
 

@@ -105,7 +105,24 @@ router.post('/:id/send-to-rundown', asyncHandler(async (req, res) => {
 
     // Parse script to commands
     const commands = parseScriptToCommands(story.script);
-    const totalDuration = calculateTotalDuration(commands);
+
+    // Log request body for debugging
+    Logger.info('Stories', `send-to-rundown request body: ${JSON.stringify(req.body)}`);
+    Logger.info('Stories', `Story format: ${story.format}`);
+
+    // Log parsed commands
+    Logger.info('Stories', `Parsed ${commands.length} commands:`);
+    commands.forEach((cmd, i) => {
+        Logger.info('Stories', `  [${i}] ${cmd.type} @ ${cmd.start_time}s (duration: ${cmd.duration}s) -> ends at ${cmd.start_time + cmd.duration}s`);
+    });
+
+    // Calculate duration from parsed commands
+    const parsedDuration = calculateTotalDuration(commands);
+    Logger.info('Stories', `Parsed duration from script: ${parsedDuration}s`);
+    Logger.info('Stories', `Provided duration from request: ${req.body.estimated_duration}s`);
+
+    // Use provided duration from timeline, or calculate from parsed commands
+    const totalDuration = req.body.estimated_duration || parsedDuration;
 
     // Get current rundown or use provided rundown_id
     let rundownId = req.body.rundown_id;

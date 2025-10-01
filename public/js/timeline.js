@@ -722,69 +722,94 @@ class TimelineBuilder {
             const videoStartTime = video.start;
             const videoEndTime = video.start + video.duration;
 
-            // Find graphics that appear during this video
-            const overlayGraphics = graphicsItems.filter(g =>
-                g.start >= videoStartTime && g.start < videoEndTime
-            );
+            // Find all overlays (graphics + audio) during this video
+            const overlays = [];
 
-            // Add graphics with proper WAIT timing
-            overlayGraphics.forEach(graphic => {
-                const waitTime = Math.floor(graphic.start - videoStartTime);
+            // Add graphics
+            graphicsItems.filter(g => g.start >= videoStartTime && g.start < videoEndTime)
+                .forEach(g => overlays.push({ type: 'graphics', item: g, start: g.start }));
 
-                // Add WAIT command (format: ((WAIT X)) where X is seconds from video start)
+            // Add audio
+            audioItems.filter(a => a.start >= videoStartTime && a.start < videoEndTime)
+                .forEach(a => overlays.push({ type: 'audio', item: a, start: a.start }));
+
+            // Sort overlays by start time
+            overlays.sort((a, b) => a.start - b.start);
+
+            // Track current script time position (starts at video start)
+            let scriptTime = videoStartTime;
+
+            // Generate overlay commands in chronological order
+            overlays.forEach(overlay => {
+                const waitTime = Math.floor(overlay.start - scriptTime);
+
+                // Add WAIT if needed (time from last command)
                 if (waitTime > 0) {
                     script += `((WAIT ${waitTime}))\n`;
+                    scriptTime += waitTime;
                 }
 
-                // Add GFX ON command
-                script += `((GFX ON - "${graphic.filename}" - ${this.formatTime(graphic.duration)}))\n`;
-
-                // Add GFX OFF command
-                script += `((GFX OFF))\n`;
-            });
-
-            // Find audio that appears during this video
-            const overlayAudio = audioItems.filter(a =>
-                a.start >= videoStartTime && a.start < videoEndTime
-            );
-
-            overlayAudio.forEach(audio => {
-                const waitTime = Math.floor(audio.start - videoStartTime);
-                if (waitTime > 0) {
-                    script += `((WAIT ${waitTime}))\n`;
+                if (overlay.type === 'graphics') {
+                    script += `((GFX ON - "${overlay.item.filename}" - ${this.formatTime(overlay.item.duration)}))\n`;
+                    script += `((GFX OFF))\n`;
+                } else if (overlay.type === 'audio') {
+                    script += `((AUDIO - "${overlay.item.filename}" - ${this.formatTime(overlay.item.duration)}))\n`;
                 }
-                script += `((AUDIO - "${audio.filename}" - ${this.formatTime(audio.duration)}))\n`;
+
+                // Update script time to current overlay position
+                scriptTime = overlay.start;
             });
 
             timelineTime = videoEndTime;
         });
 
-        // Add standalone graphics (not during video)
-        const standaloneGraphics = graphicsItems.filter(g => {
+        // Collect all standalone items (not overlays) and sort chronologically
+        const standaloneItems = [];
+
+        // Add standalone graphics
+        graphicsItems.filter(g => {
             return !videoItems.some(v => g.start >= v.start && g.start < v.start + v.duration);
-        });
+        }).forEach(g => standaloneItems.push({ type: 'graphics', item: g }));
 
-        standaloneGraphics.forEach(graphic => {
-            if (graphic.start > timelineTime) {
-                const waitDuration = graphic.start - timelineTime;
-                script += `((WAIT ${Math.floor(waitDuration)}))\n`;
-                timelineTime = graphic.start;
-            }
-
-            script += `((GFX ON - "${graphic.filename}" - ${this.formatTime(graphic.duration)}))\n`;
-            script += `((GFX OFF))\n`;
-            timelineTime = graphic.start + graphic.duration;
-        });
+        // Add standalone audio
+        audioItems.filter(a => {
+            return !videoItems.some(v => a.start >= v.start && a.start < v.start + v.duration);
+        }).forEach(a => standaloneItems.push({ type: 'audio', item: a }));
 
         // Add text items
-        textItems.forEach(item => {
+        textItems.forEach(t => standaloneItems.push({ type: 'text', item: t }));
+
+        // Sort all standalone items by start time, with text items first when times are equal
+        standaloneItems.sort((a, b) => {
+            if (a.item.start !== b.item.start) {
+                return a.item.start - b.item.start;
+            }
+            // If same start time, text comes first
+            if (a.type === 'text' && b.type !== 'text') return -1;
+            if (a.type !== 'text' && b.type === 'text') return 1;
+            return 0;
+        });
+
+        // Process standalone items in chronological order
+        standaloneItems.forEach(({ type, item }) => {
             if (item.start > timelineTime) {
                 const waitDuration = item.start - timelineTime;
                 script += `((WAIT ${Math.floor(waitDuration)}))\n`;
                 timelineTime = item.start;
             }
-            script += item.text || '[Voiceover text here]';
-            script += '\n';
+
+            if (type === 'graphics') {
+                script += `((GFX ON - "${item.filename}" - ${this.formatTime(item.duration)}))\n`;
+                script += `((GFX OFF))\n`;
+                timelineTime = item.start + item.duration;
+            } else if (type === 'audio') {
+                script += `((AUDIO - "${item.filename}" - ${this.formatTime(item.duration)}))\n`;
+                timelineTime = item.start + item.duration;
+            } else if (type === 'text') {
+                script += item.text || '[Voiceover text here]';
+                script += '\n';
+                // Don't update timelineTime for text - it overlaps other items
+            }
         });
 
         console.log('[TIMELINE] Generated script:', script);
