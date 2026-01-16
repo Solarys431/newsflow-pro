@@ -1,4 +1,4 @@
-# iNEWS Professional 2025 - Broadcast Newsroom System
+# NewsFlow Pro 2025 - Broadcast Newsroom System
 
 **Sistema broadcast professionale con automazione CasparCG e gestione newsroom completa**
 
@@ -195,7 +195,7 @@ wscat -c ws://localhost:3334
 
 ## 📞 Support
 
-- **Logs**: `tail -f logs/inews-*.log`
+- **Logs**: `tail -f logs/newsflow-*.log`
 - **Console**: Browser DevTools + Terminal
 - **WebSocket**: Real-time updates porta 3334
 - **Health**: http://localhost:3333/api/health

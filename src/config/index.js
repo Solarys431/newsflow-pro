@@ -1,5 +1,5 @@
 /**
- * iNEWS Professional - Configurazione Centralizzata
+ * NewsFlow Pro - Configurazione Centralizzata
  * Gestisce tutte le configurazioni del sistema
  */
 

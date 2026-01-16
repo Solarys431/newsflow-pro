@@ -140,3 +140,40 @@ media/.cache/
 # Project specific
 # Keep essential config files but ignore sensitive data
 !.env.example
+
+# ===========================================
+# NON-ESSENTIAL FILES - Keep repo clean
+# ===========================================
+
+# Backup files
+backup/
+
+# Old documentation (HTML mockups)
+docs/*.html
+
+# Gemini clipboard
+.gemini-clipboard/
+
+# Supabase temp files
+supabase/.temp/
+supabase/.branches/
+
+# Test media files in root
+*.mp4
+*.mov
+*.avi
+
+# Misc notes and scripts
+cartella_caspar.md
+script.md
+share.sh
+VIZRTINTEGRATION.MD
+
+# Claude Code local files
+.claude/
+
+# Media generated files
+media/*.html
+
+# Additional docs to exclude
+docs/PIANO_MIGLIORAMENTO_OPERATIVO.md

@@ -1,4 +1,4 @@
-# CLAUDE.md - iNEWS Professional v2.1
+# CLAUDE.md - NewsFlow Pro v2.1
 
 Parla e pensa sempre in italiano.
 
@@ -6,14 +6,14 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## 🚀 Project Overview
 
-iNEWS Professional 2025 - Enterprise broadcast newsroom system with modular architecture, real-time CasparCG integration, and professional TV workflow management.
+NewsFlow Pro 2025 - Enterprise broadcast newsroom system with modular architecture, real-time CasparCG integration, and professional TV workflow management.
 
 **Latest Update**: 2025-09-29 - FTP upload system, template fixes, rundown position handling
 
 ## 🏗️ Architecture v2.1
 
 ```
-inews-pro/
+newsflow-pro/
 ├── src/
 │   ├── config/           # Configurazioni centralizzate
 │   ├── controllers/      # API endpoints (stories, rundown, automation, media)

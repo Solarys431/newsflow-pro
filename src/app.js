@@ -1,6 +1,6 @@
 /**
- * iNEWS Professional - Main Application
- * Architettura modulare e ottimizzata
+ * NewsFlow Pro - Main Application
+ * Enterprise broadcast newsroom with modular architecture
  */
 
 const express = require('express');
@@ -36,7 +36,7 @@ class Application {
 
     async initialize() {
         try {
-            Logger.info('SYSTEM', '🚀 Starting iNEWS Professional System...');
+            Logger.info('SYSTEM', '🚀 Starting NewsFlow Pro System...');
 
             // Ensure directories exist
             await this.ensureDirectories();
@@ -109,8 +109,7 @@ class Application {
             Logger.warn('SYSTEM', 'CasparCG connection failed, will retry', { error: error.message });
         }
 
-        // Initialize WebSocket
-        await WebSocketService.start(config.server.wsPort);
+        // Note: WebSocket initialization moved to start() method to support HTTP upgrade
 
         // Setup WebSocket event handlers
         WebSocketService.on('clientConnected', (client) => {
@@ -158,7 +157,7 @@ class Application {
                     websocket: `${WebSocketService.clients.size} clients`,
                     templateServer: this.templateServer ? 'running' : 'stopped'
                 },
-                version: '2.0.0',
+                version: '2.1.0',
                 environment: config.server.environment
             });
         });
@@ -175,7 +174,11 @@ class Application {
                 if (!CasparService.isConnected()) {
                     return res.status(503).json({
                         connected: false,
-                        error: 'Not connected to CasparCG server'
+                        error: 'Not connected to CasparCG server',
+                        config: {
+                            host: config.caspar.host,
+                            port: config.caspar.port
+                        }
                     });
                 }
 
@@ -193,6 +196,40 @@ class Application {
                 });
             } catch (error) {
                 next(error);
+            }
+        });
+
+        router.post('/caspar/reconnect', async (req, res, next) => {
+            try {
+                Logger.info('CASPAR', 'Manual reconnection requested');
+
+                // Disconnect if already connected
+                if (CasparService.isConnected()) {
+                    await CasparService.disconnect();
+                }
+
+                // Attempt reconnection
+                await CasparService.connect();
+
+                res.json({
+                    success: true,
+                    message: 'CasparCG reconnection successful',
+                    connected: CasparService.isConnected(),
+                    config: {
+                        host: config.caspar.host,
+                        port: config.caspar.port
+                    }
+                });
+            } catch (error) {
+                Logger.error('CASPAR', 'Manual reconnection failed', { error: error.message });
+                res.status(500).json({
+                    success: false,
+                    error: 'Reconnection failed: ' + error.message,
+                    config: {
+                        host: config.caspar.host,
+                        port: config.caspar.port
+                    }
+                });
             }
         });
 
@@ -253,8 +290,33 @@ class Application {
             }
         });
 
+        // Template proxy endpoints (for Cloudflare Tunnel compatibility)
+        // Serve templates on main port to avoid :8080 issues
+        router.get('/template/:filename', (req, res, next) => {
+            const filename = req.params.filename;
+            const templatePath = path.join(config.media.templatesPath, filename);
+
+            if (fs.existsSync(templatePath)) {
+                res.sendFile(path.resolve(templatePath));
+            } else {
+                res.status(404).json({ error: 'Template not found', filename });
+            }
+        });
+
         // Mount router
         this.app.use(config.api.baseUrl, router);
+
+        // Also mount template endpoint at root level (non-API path)
+        this.app.get('/template/:filename', (req, res) => {
+            const filename = req.params.filename;
+            const templatePath = path.join(config.media.templatesPath, filename);
+
+            if (fs.existsSync(templatePath)) {
+                res.sendFile(path.resolve(templatePath));
+            } else {
+                res.status(404).send('Template not found');
+            }
+        });
 
         Logger.info('SYSTEM', 'Routes configured');
     }
@@ -282,7 +344,7 @@ class Application {
 <html>
 <head>
     <meta charset="UTF-8">
-    <title>iNEWS Template Renderer</title>
+    <title>NewsFlow Pro Renderer</title>
     <style>
         body {
             margin: 0;
@@ -309,7 +371,7 @@ class Application {
         ).join('')}
     </div>
     <script>
-        console.log('📺 iNEWS Template Renderer loaded');
+        console.log('📺 NewsFlow Pro Renderer loaded');
         window.play = function() { console.log('▶️ Play'); };
         window.stop = function() { console.log('⏹️ Stop'); };
         window.update = function(data) { console.log('🔄 Update:', data); };
@@ -373,11 +435,13 @@ class Application {
 
         // Handle uncaught exceptions
         process.on('uncaughtException', (error) => {
+            console.error('❌ UNCAUGHT EXCEPTION:', error);
             Logger.error('SYSTEM', 'Uncaught exception', { error: error.message, stack: error.stack });
             shutdown('uncaughtException');
         });
 
         process.on('unhandledRejection', (reason, promise) => {
+            console.error('❌ UNHANDLED REJECTION:', reason);
             Logger.error('SYSTEM', 'Unhandled rejection', { reason, promise });
         });
     }
@@ -385,13 +449,41 @@ class Application {
     async start() {
         await this.initialize();
 
-        this.server = this.app.listen(config.server.port, () => {
-            Logger.info('SYSTEM', '🚀 iNEWS Professional System started');
-            Logger.info('SYSTEM', `📡 HTTP Server: http://${config.server.host}:${config.server.port}`);
-            Logger.info('SYSTEM', `📡 WebSocket Server: ws://${config.server.host}:${config.server.wsPort}`);
-            Logger.info('SYSTEM', `🎨 Template Server: http://${config.server.host}:${config.server.templatePort}`);
-            Logger.info('SYSTEM', `🎬 CasparCG Target: ${config.caspar.host}:${config.caspar.port}`);
-            Logger.info('SYSTEM', '✅ System ready for production!');
+        // Create HTTP server first
+        return new Promise((resolve, reject) => {
+            this.server = this.app.listen(config.server.port, async () => {
+                try {
+                    Logger.info('SYSTEM', '🚀 NewsFlow Pro System started');
+                    Logger.info('SYSTEM', `📡 HTTP Server: http://${config.server.host}:${config.server.port}`);
+
+                    // Initialize WebSocket - use HTTP upgrade for Cloudflare Tunnel compatibility
+                    const useHttpUpgrade = process.env.USE_WS_UPGRADE === 'true' || process.env.NODE_ENV === 'production';
+
+                    if (useHttpUpgrade) {
+                        // Production mode: WebSocket on same HTTP server
+                        await WebSocketService.start({ server: this.server });
+                        Logger.info('SYSTEM', `📡 WebSocket: HTTP upgrade on same port (path: /ws)`);
+                    } else {
+                        // Development mode: WebSocket on separate port
+                        await WebSocketService.start({ port: config.server.wsPort });
+                        Logger.info('SYSTEM', `📡 WebSocket Server: ws://${config.server.host}:${config.server.wsPort}`);
+                    }
+
+                    Logger.info('SYSTEM', `🎨 Template Server: http://${config.server.host}:${config.server.templatePort}`);
+                    Logger.info('SYSTEM', `🎬 CasparCG Target: ${config.caspar.host}:${config.caspar.port}`);
+                    Logger.info('SYSTEM', '✅ System ready for production!');
+
+                    resolve();
+                } catch (error) {
+                    Logger.error('SYSTEM', 'Failed to start WebSocket service', { error: error.message });
+                    reject(error);
+                }
+            });
+
+            this.server.on('error', (error) => {
+                Logger.error('SYSTEM', 'HTTP server error', { error: error.message });
+                reject(error);
+            });
         });
     }
 }

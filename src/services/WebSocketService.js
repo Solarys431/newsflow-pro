@@ -19,16 +19,36 @@ class WebSocketService extends EventEmitter {
 
     // ================ SERVER MANAGEMENT ================
 
-    start(port = config.server.wsPort) {
+    /**
+     * Start WebSocket server
+     * @param {Object} options - Server options
+     * @param {number} options.port - Standalone port (for local dev)
+     * @param {Server} options.server - HTTP server for upgrade (for production/tunnel)
+     */
+    start(options = {}) {
         return new Promise((resolve, reject) => {
             try {
-                this.wss = new WebSocket.Server({ port });
+                const port = options.port || config.server.wsPort;
+                const httpServer = options.server;
 
-                this.wss.on('listening', () => {
-                    console.log(`📡 WebSocket server listening on port ${port}`);
+                // Use HTTP upgrade if server is provided, standalone otherwise
+                if (httpServer) {
+                    this.wss = new WebSocket.Server({
+                        server: httpServer,
+                        path: '/ws'  // WebSocket endpoint path
+                    });
+                    console.log(`📡 WebSocket server attached to HTTP server on path /ws`);
                     this.startHeartbeat();
                     resolve();
-                });
+                } else {
+                    this.wss = new WebSocket.Server({ port });
+
+                    this.wss.on('listening', () => {
+                        console.log(`📡 WebSocket server listening on port ${port}`);
+                        this.startHeartbeat();
+                        resolve();
+                    });
+                }
 
                 this.wss.on('connection', (ws, req) => {
                     this.handleConnection(ws, req);

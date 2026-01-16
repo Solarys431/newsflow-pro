@@ -380,7 +380,7 @@ class TimelinePlayback {
             this.activeGraphics.push(currentGraphic);
 
             // Load graphic in overlay (iframe on top of video)
-            const templateUrl = `http://${Config.server.host}:${Config.server.templatePort}/template/${currentGraphic.filename}?autoshow=1`;
+            const templateUrl = `${Config.server.templateBaseUrl}/template/${currentGraphic.filename}?autoshow=1`;
 
             // Position graphic as overlay
             this.previewGraphic.src = templateUrl;

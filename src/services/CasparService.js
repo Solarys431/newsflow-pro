@@ -32,8 +32,17 @@ class CasparService extends EventEmitter {
             this.socket.setKeepAlive(true, 1000);
             this.socket.setNoDelay(true); // Disable Nagle algorithm for lower latency
 
+            // Set timeout for connection attempt
+            const connectionTimeout = setTimeout(() => {
+                if (!this.connected) {
+                    this.socket.destroy();
+                    reject(new Error('Connection timeout'));
+                }
+            }, config.caspar.timeout);
+
             // Connection success
             this.socket.connect(config.caspar.port, config.caspar.host, () => {
+                clearTimeout(connectionTimeout);
                 console.log('✅ CasparCG TCP connected');
                 this.handleConnected();
                 resolve();
@@ -46,6 +55,7 @@ class CasparService extends EventEmitter {
 
             // Handle errors
             this.socket.on('error', (error) => {
+                clearTimeout(connectionTimeout);
                 console.error('🚨 CasparCG TCP error:', error.message);
                 this.handleDisconnection();
                 reject(error);
@@ -59,8 +69,10 @@ class CasparService extends EventEmitter {
 
             // Handle timeout
             this.socket.on('timeout', () => {
+                clearTimeout(connectionTimeout);
                 console.log('⏰ CasparCG TCP timeout');
                 this.socket.destroy();
+                reject(new Error('Socket timeout'));
             });
         });
     }

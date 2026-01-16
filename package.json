@@ -1,7 +1,7 @@
 {
-  "name": "inews-mini-system",
-  "version": "1.0.0",
-  "description": "iNEWS Mini System - Complete Newsroom Workflow",
+  "name": "newsflow-pro",
+  "version": "2.1.0",
+  "description": "NewsFlow Pro - Enterprise Broadcast Newsroom System",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
@@ -15,9 +15,10 @@
     "newsroom",
     "broadcast",
     "caspar",
-    "automation"
+    "automation",
+    "newsflow"
   ],
-  "author": "iNEWS System",
+  "author": "NewsFlow Pro Team",
   "license": "MIT",
   "dependencies": {
     "@supabase/supabase-js": "^2.38.0",

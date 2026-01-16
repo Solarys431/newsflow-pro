@@ -1,11 +1,11 @@
 #!/usr/bin/env node
 
 /**
- * iNEWS Professional - Server Entry Point
- * Sistema newsroom professionale con architettura modulare
+ * NewsFlow Pro - Server Entry Point
+ * Enterprise broadcast newsroom system with modular architecture
  *
- * @version 2.0.0
- * @author iNEWS Team
+ * @version 2.1.0
+ * @author NewsFlow Pro Team
  */
 
 // Load environment variables

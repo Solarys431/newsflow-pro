@@ -957,7 +957,7 @@ class iNEWSApp {
 
         // Show graphic preview in iframe
         // Add autoshow parameter to trigger template display
-        const templateUrl = `http://${Config.server.host}:${Config.server.templatePort}/template/${templateName}?autoshow=1`;
+        const templateUrl = `${Config.server.templateBaseUrl}/template/${templateName}?autoshow=1`;
         console.log('[PREVIEW] Template URL:', templateUrl);
 
         // Force reload iframe
