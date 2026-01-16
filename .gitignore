@@ -145,23 +145,31 @@ media/.cache/
 # NON-ESSENTIAL FILES - Keep repo clean
 # ===========================================
 
+# Documentation (keep locally, not in repo)
+docs/
+CLAUDE.md
+database-schema.sql
+
+# Templates (keep locally)
+templates/
+
+# Scripts (keep locally)
+scripts/
+
 # Backup files
 backup/
-
-# Old documentation (HTML mockups)
-docs/*.html
 
 # Gemini clipboard
 .gemini-clipboard/
 
 # Supabase temp files
-supabase/.temp/
-supabase/.branches/
+supabase/
 
-# Test media files in root
+# Test media files
 *.mp4
 *.mov
 *.avi
+media/
 
 # Misc notes and scripts
 cartella_caspar.md
@@ -171,9 +179,3 @@ VIZRTINTEGRATION.MD
 
 # Claude Code local files
 .claude/
-
-# Media generated files
-media/*.html
-
-# Additional docs to exclude
-docs/PIANO_MIGLIORAMENTO_OPERATIVO.md
