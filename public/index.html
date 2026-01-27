@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NewsFlow Pro</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/timeline.css">
+</head>
+<body>
+    <!-- App Container -->
+    <div id="app">
+        <!-- Header -->
+        <header class="nf-header">
+            <div class="header-left">
+                <div class="nf-logo">
+                    <img src="/images/logo.png" alt="NewsFlow Pro" class="logo-img">
+                </div>
+                <div class="tg-selector">
+                    <select id="show-selector">
+                        <option value="">Select Rundown</option>
+                    </select>
+                    <i class="fas fa-chevron-down"></i>
+                    <button class="btn-new-rundown" id="btn-new-rundown" title="Crea Nuovo Rundown">
+                        <i class="fas fa-plus-circle"></i>
+                    </button>
+                    <button class="btn-delete-rundown" id="btn-delete-rundown" title="Elimina Rundown Selezionato">
+                        <i class="fas fa-trash-alt"></i>
+                    </button>
+                </div>
+                <div class="on-air-status">
+                    <span class="on-air-label">ON AIR</span>
+                    <span class="on-air-time" id="on-air-timer">00:00:00</span>
+                </div>
+            </div>
+            <div class="header-right">
+                <div class="user-area">
+                    <span class="user-name">Mario Rossi</span>
+                    <button class="btn-notification">
+                        <i class="fas fa-bell"></i>
+                    </button>
+                    <button class="btn-settings">
+                        <i class="fas fa-cog"></i>
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Toolbar -->
+        <div class="nf-toolbar">
+            <button class="toolbar-btn" data-action="new-story">
+                <i class="fas fa-plus"></i>
+                <span>New Story</span>
+            </button>
+            <button class="toolbar-btn" data-action="save">
+                <i class="fas fa-save"></i>
+                <span>Save</span>
+            </button>
+            <button class="toolbar-btn" data-action="open">
+                <i class="fas fa-folder-open"></i>
+                <span>Open</span>
+            </button>
+            <button class="toolbar-btn active" data-action="rundown">
+                <i class="fas fa-list"></i>
+                <span>Rundown</span>
+            </button>
+            <button class="toolbar-btn" data-action="script">
+                <i class="fas fa-file-text"></i>
+                <span>Script</span>
+            </button>
+            <button class="toolbar-btn" data-action="media">
+                <i class="fas fa-photo-video"></i>
+                <span>Media</span>
+            </button>
+            <button class="toolbar-btn" data-action="search">
+                <i class="fas fa-search"></i>
+                <span>Search</span>
+            </button>
+            <button class="toolbar-btn" data-action="archive">
+                <i class="fas fa-archive"></i>
+                <span>Archive</span>
+            </button>
+        </div>
+
+        <!-- Main Layout - 4 PANELS -->
+        <div class="nf-layout">
+            <!-- Panel 1: Rundown (Left) -->
+            <div class="rundown-panel">
+                <div class="panel-header">
+                    <h2><i class="fas fa-list"></i> Rundown</h2>
+                    <div class="rundown-stats">
+                        <span>Total: <strong id="total-duration">00:00</strong></span>
+                        <span>Target: <strong id="target-duration">25:00</strong></span>
+                        <span>Items: <strong id="items-count">0</strong></span>
+                    </div>
+                </div>
+                <div class="rundown-table-container">
+                    <table class="rundown-table">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>TYPE</th>
+                                <th>SLUG</th>
+                                <th>MEDIA</th>
+                                <th>DUR</th>
+                                <th>BACK</th>
+                                <th><i class="fas fa-play"></i></th>
+                            </tr>
+                        </thead>
+                        <tbody id="rundown-items">
+                            <!-- Dynamic content loaded here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Panel 2: Story Editor (Center-Left) -->
+            <div class="story-panel">
+                <div class="story-header">
+                    <div class="story-info-bar">
+                        <span>Story: <strong id="story-title">Select a story</strong></span>
+                        <span>Type: <span class="story-type-badge" id="story-type"></span></span>
+                        <span>Duration: <strong id="story-duration">0:00</strong></span>
+                        <span>Writer: <strong id="story-writer">-</strong></span>
+                        <button class="btn-approve" id="btn-approve">
+                            <i class="fas fa-check"></i> Approve
+                        </button>
+                    </div>
+                </div>
+                <div class="script-toolbar">
+                    <!-- Mode Toggle -->
+                    <div class="script-mode-toggle">
+                        <button class="mode-toggle-btn active" id="btn-text-mode" title="Text Mode">
+                            <i class="fas fa-align-left"></i> Text
+                        </button>
+                        <button class="mode-toggle-btn" id="btn-timeline-mode" title="Timeline Mode">
+                            <i class="fas fa-stream"></i> Timeline
+                        </button>
+                    </div>
+                    <div class="script-toolbar-spacer"></div>
+                    <button class="script-tool-btn" id="btn-insert-video" title="Inserisci Video">
+                        <i class="fas fa-film"></i> Video
+                    </button>
+                    <button class="script-tool-btn" id="btn-insert-audio" title="Inserisci Audio">
+                        <i class="fas fa-volume-up"></i> Audio
+                    </button>
+                    <button class="script-tool-btn" id="btn-insert-graphic" title="Inserisci Grafica">
+                        <i class="fas fa-layer-group"></i> Graphic
+                    </button>
+                    <button class="script-tool-btn" id="btn-add-text" title="Aggiungi Testo Voiceover">
+                        <i class="fas fa-align-left"></i> Text
+                    </button>
+                    <div class="script-toolbar-spacer"></div>
+                    <button class="script-tool-btn primary" id="btn-save-story" title="Salva Storia">
+                        <i class="fas fa-save"></i> Save
+                    </button>
+                    <button class="script-tool-btn success" id="btn-send-to-rundown" title="Invia al Rundown">
+                        <i class="fas fa-paper-plane"></i> Send to Rundown
+                    </button>
+                </div>
+                <div class="story-content">
+                    <!-- TEXT MODE (Default) -->
+                    <div class="script-sections" id="script-sections">
+                        <div class="empty-state">
+                            <i class="fas fa-file-alt"></i>
+                            <p>Select a story from the rundown to view its content</p>
+                        </div>
+                    </div>
+
+                    <!-- TIMELINE MODE (Hidden by default) -->
+                    <div class="timeline-builder" id="timeline-builder" style="display: none;">
+                        <!-- Timeline Header -->
+                        <div class="timeline-header">
+                            <div class="timeline-controls">
+                                <button class="timeline-btn" id="btn-clear-timeline" title="Clear Timeline">
+                                    <i class="fas fa-trash"></i> Clear
+                                </button>
+                                <button class="timeline-btn primary" id="btn-generate-script" title="Generate Script from Timeline">
+                                    <i class="fas fa-code"></i> Generate Script
+                                </button>
+                            </div>
+
+                            <!-- Transport Controls -->
+                            <div class="timeline-transport">
+                                <button class="transport-btn play" id="timeline-play-btn" title="Play Timeline">
+                                    <i class="fas fa-play"></i> Play
+                                </button>
+                                <button class="transport-btn pause" id="timeline-pause-btn" title="Pause Timeline">
+                                    <i class="fas fa-pause"></i> Pause
+                                </button>
+                                <button class="transport-btn stop" id="timeline-stop-btn" title="Stop Timeline">
+                                    <i class="fas fa-stop"></i> Stop
+                                </button>
+                            </div>
+
+                            <div class="timeline-zoom">
+                                <button class="zoom-btn" id="zoom-out" title="Zoom Out">
+                                    <i class="fas fa-search-minus"></i>
+                                </button>
+                                <span class="zoom-level" id="zoom-level">100%</span>
+                                <button class="zoom-btn" id="zoom-in" title="Zoom In">
+                                    <i class="fas fa-search-plus"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Timeline Content -->
+                        <div class="timeline-content">
+                            <!-- Timecode Ruler -->
+                            <div class="timeline-ruler-container">
+                                <div class="track-label-placeholder"></div>
+                                <div class="timeline-ruler" id="timeline-ruler">
+                                    <!-- Timecodes dynamically generated -->
+                                </div>
+                            </div>
+
+                            <!-- Track 1: VIDEO -->
+                            <div class="timeline-track" data-track="video" data-layer="1">
+                                <div class="track-label">
+                                    <div class="track-icon video">
+                                        <i class="fas fa-video"></i>
+                                    </div>
+                                    <span class="track-name">VIDEO</span>
+                                </div>
+                                <div class="track-content" id="track-video" data-track-name="video">
+                                    <!-- Timeline items dropped here -->
+                                </div>
+                            </div>
+
+                            <!-- Track 2: GRAPHICS -->
+                            <div class="timeline-track" data-track="graphics" data-layer="20">
+                                <div class="track-label">
+                                    <div class="track-icon graphics">
+                                        <i class="fas fa-layer-group"></i>
+                                    </div>
+                                    <span class="track-name">GRAPHICS</span>
+                                </div>
+                                <div class="track-content" id="track-graphics" data-track-name="graphics">
+                                    <!-- Graphics overlay items -->
+                                </div>
+                            </div>
+
+                            <!-- Track 3: AUDIO -->
+                            <div class="timeline-track" data-track="audio" data-layer="10">
+                                <div class="track-label">
+                                    <div class="track-icon audio">
+                                        <i class="fas fa-volume-up"></i>
+                                    </div>
+                                    <span class="track-name">AUDIO</span>
+                                </div>
+                                <div class="track-content" id="track-audio" data-track-name="audio">
+                                    <!-- Audio items -->
+                                </div>
+                            </div>
+
+                            <!-- Track 4: TEXT -->
+                            <div class="timeline-track" data-track="text" data-layer="text">
+                                <div class="track-label">
+                                    <div class="track-icon text">
+                                        <i class="fas fa-align-left"></i>
+                                    </div>
+                                    <span class="track-name">TEXT</span>
+                                </div>
+                                <div class="track-content" id="track-text" data-track-name="text">
+                                    <!-- Text/voiceover blocks -->
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Timeline Footer Info -->
+                        <div class="timeline-footer">
+                            <div class="timeline-stats">
+                                <span class="stat-item">
+                                    <i class="fas fa-film"></i> <strong id="timeline-item-count">0</strong> items
+                                </span>
+                                <span class="stat-item">
+                                    <i class="fas fa-clock"></i> Total: <strong id="timeline-total-duration">0:00</strong>
+                                </span>
+                            </div>
+                            <div class="timeline-playhead-time" id="timeline-playhead-time">0:00</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Panel 3: Media (Center-Right) -->
+            <div class="media-panel">
+                <div class="media-section">
+                    <div class="section-header">
+                        <h3>VIDEO CLIPS</h3>
+                        <button class="btn-add">+ ADD</button>
+                    </div>
+                    <div class="media-list" id="video-clips">
+                        <!-- Dynamic content loaded here -->
+                    </div>
+                </div>
+
+                <div class="media-section">
+                    <div class="section-header">
+                        <h3>AUDIO / SOT</h3>
+                        <button class="btn-add">+ ADD</button>
+                    </div>
+                    <div class="media-list" id="audio-clips">
+                        <!-- Dynamic content loaded here -->
+                    </div>
+                </div>
+
+                <div class="media-section">
+                    <div class="section-header">
+                        <h3>GRAPHICS</h3>
+                        <button class="btn-add">+ ADD</button>
+                    </div>
+                    <div class="media-list" id="graphics">
+                        <!-- Dynamic content loaded here -->
+                    </div>
+                </div>
+
+                <div class="media-section">
+                    <div class="section-header">
+                        <h3>TEXT ITEMS</h3>
+                    </div>
+                    <div class="media-list" id="text-items">
+                        <div style="padding: 12px; text-align: center; color: #999;">Nessun testo disponibile</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Panel 4: Preview/Control (Right) -->
+            <div class="preview-panel">
+                <!-- Media Preview Window -->
+                <div class="media-preview-container">
+                    <div class="preview-header">
+                        <h4>PREVIEW</h4>
+                        <span id="preview-duration" class="preview-duration">--:--</span>
+                    </div>
+                    <div class="preview-window" id="preview-window">
+                        <div class="preview-placeholder">
+                            <i class="fas fa-photo-video"></i>
+                            <p>Seleziona un media per visualizzare l'anteprima</p>
+                        </div>
+                        <video id="preview-video" class="preview-video" style="display: none;"></video>
+                        <iframe id="preview-graphic" class="preview-graphic" style="display: none;"></iframe>
+                    </div>
+                    <!-- Video Player Controls (appears only for video/audio) -->
+                    <div class="video-player-controls" id="video-player-controls" style="display: none;">
+                        <button class="player-btn" id="player-play" title="Play">
+                            <i class="fas fa-play"></i>
+                        </button>
+                        <button class="player-btn" id="player-pause" title="Pause">
+                            <i class="fas fa-pause"></i>
+                        </button>
+                        <button class="player-btn" id="player-stop" title="Stop">
+                            <i class="fas fa-stop"></i>
+                        </button>
+                        <div class="player-timeline">
+                            <div class="player-progress" id="player-progress"></div>
+                        </div>
+                        <span class="player-time" id="player-time">0:00 / 0:00</span>
+                    </div>
+
+                    <div class="preview-info" id="preview-info" style="display: none;">
+                        <div class="info-item">
+                            <span class="info-label">Nome:</span>
+                            <span id="preview-name">--</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Tipo:</span>
+                            <span id="preview-type">--</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Risoluzione:</span>
+                            <span id="preview-resolution">--</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Control Buttons -->
+                <div class="control-buttons">
+                    <button class="control-btn cue" id="btn-cue">
+                        <i class="fas fa-circle"></i>
+                        <span>CUE</span>
+                    </button>
+                    <button class="control-btn take" id="btn-take">
+                        <i class="fas fa-play"></i>
+                        <span>TAKE</span>
+                    </button>
+                    <button class="control-btn stop" id="btn-stop">
+                        <i class="fas fa-stop"></i>
+                        <span>STOP</span>
+                    </button>
+                </div>
+
+                <!-- Device Status -->
+                <div class="device-status">
+                    <h4>DEVICE STATUS</h4>
+                    <div class="status-grid">
+                        <div class="status-item" id="status-caspar">
+                            <span class="status-dot"></span>
+                            <span>CasparCG 1</span>
+                        </div>
+                        <div class="status-item connected" id="status-video-server">
+                            <span class="status-dot"></span>
+                            <span>Video Server</span>
+                        </div>
+                        <div class="status-item connected" id="status-audio-mixer">
+                            <span class="status-dot"></span>
+                            <span>Audio Mixer</span>
+                        </div>
+                        <div class="status-item connected" id="status-prompter">
+                            <span class="status-dot"></span>
+                            <span>Prompter</span>
+                        </div>
+                        <div class="status-item connected" id="status-graphics">
+                            <span class="status-dot"></span>
+                            <span>Graphics</span>
+                        </div>
+                        <div class="status-item error" id="status-playout2">
+                            <span class="status-dot"></span>
+                            <span>Playout 2</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Program Timeline -->
+                <div class="program-timeline">
+                    <h4>PROGRAM TIMELINE</h4>
+                    <div class="timeline-bar">
+                        <div class="timeline-progress" id="timeline-progress" style="width: 0%"></div>
+                        <div class="timeline-marker"></div>
+                    </div>
+                    <div class="timeline-times">
+                        <span id="timeline-current">00:00</span>
+                        <span id="timeline-total">25:00</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Status Bar -->
+        <div class="status-bar">
+            <div class="status-left">
+                <span class="status-item">
+                    <span class="status-dot connected"></span>
+                    <span>Database: <strong id="db-status">Connected</strong></span>
+                </span>
+                <span class="status-item">
+                    <span class="status-dot" id="caspar-dot"></span>
+                    <span>CasparCG: <strong id="caspar-status">Disconnected</strong></span>
+                </span>
+                <span class="status-item">
+                    <span>Server: <strong>NEWS-SRV-01</strong></span>
+                </span>
+                <span class="status-item">
+                    <span>User: <strong>mrossi</strong></span>
+                </span>
+            </div>
+            <div class="status-right">
+                <span id="system-time">00:00:00</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notification Container -->
+    <div id="notifications"></div>
+
+    <!-- Upload Progress -->
+    <div id="upload-progress" style="display: none; position: fixed; bottom: 24px; right: 24px; background: var(--bg-primary); border: 1px solid var(--border); border-radius: 8px; padding: 16px; width: 320px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); z-index: 1000;">
+        <div class="upload-info" style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+            <span class="upload-filename" style="color: var(--text-primary); font-weight: 600;"></span>
+            <span class="upload-percent" style="color: var(--accent);">0%</span>
+        </div>
+        <div class="progress-bar" style="height: 8px; background: var(--bg-secondary); border-radius: 4px; overflow: hidden;">
+            <div class="progress-fill" style="height: 100%; background: var(--accent); width: 0%; transition: width 0.3s;"></div>
+        </div>
+        <div class="upload-stats" style="margin-top: 8px; font-size: 12px; color: var(--text-secondary);">
+            <span class="upload-bytes">0 B / 0 B</span>
+        </div>
+    </div>
+
+    <!-- Modal Container -->
+    <div id="modal-container"></div>
+
+    <!-- JavaScript Modules -->
+    <script src="js/config.js"></script>
+    <script src="js/api.js"></script>
+    <script src="js/websocket.js"></script>
+    <script src="js/timeline.js"></script>
+    <script src="js/timeline-playback.js"></script>
+    <script src="js/newsflow-integrated.js"></script>
+</body>
+</html>

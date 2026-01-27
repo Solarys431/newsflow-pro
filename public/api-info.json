@@ -1,0 +1,15 @@
+{
+  "name": "NewsFlow Pro API",
+  "version": "2.1.0",
+  "status": "active",
+  "endpoints": {
+    "health": "GET /api/health",
+    "stories": "GET /api/stories",
+    "rundown": "GET /api/rundown",
+    "automation": "GET /api/automation",
+    "media": "GET /api/media",
+    "caspar": "GET /api/caspar/test",
+    "websocket": "ws://{host}:{WS_PORT}"
+  },
+  "documentation": "See README.md for API documentation"
+}

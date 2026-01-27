@@ -1,0 +1,803 @@
+/**
+ * Timeline Builder - SuperConductor Style
+ * Professional broadcast automation timeline interface
+ */
+
+/* ============================================
+   MODE TOGGLE BUTTONS
+   ============================================ */
+.script-mode-toggle {
+    display: flex;
+    gap: 0;
+    background: var(--bg-elevated);
+    border-radius: 6px;
+    padding: 4px;
+    border: 1px solid var(--border);
+}
+
+.mode-toggle-btn {
+    padding: 8px 12px;
+    background: transparent;
+    border: none;
+    color: var(--text-secondary);
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    white-space: nowrap;
+}
+
+.mode-toggle-btn:hover {
+    background: var(--bg-hover);
+    color: var(--text-primary);
+}
+
+.mode-toggle-btn.active {
+    background: var(--accent);
+    color: white;
+}
+
+.mode-toggle-btn i {
+    font-size: 14px;
+}
+
+/* ============================================
+   TIMELINE BUILDER CONTAINER
+   ============================================ */
+.timeline-builder {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    background: #0a0e17;
+    overflow: hidden;
+}
+
+/* Timeline Header */
+.timeline-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 16px;
+    background: #0f1419;
+    border-bottom: 1px solid #1a1f2e;
+}
+
+.timeline-controls {
+    display: flex;
+    gap: 8px;
+}
+
+.timeline-btn {
+    padding: 6px 10px;
+    background: #1a1f2e;
+    border: 1px solid #2a2f3e;
+    color: #9ca3af;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    border-radius: 4px;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.timeline-btn:hover {
+    background: #242936;
+    border-color: #3a3f4e;
+    color: #e5e7eb;
+}
+
+.timeline-btn.primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-color: transparent;
+    color: white;
+}
+
+.timeline-btn.primary:hover {
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+.timeline-zoom {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.zoom-btn {
+    width: 32px;
+    height: 32px;
+    background: #1a1f2e;
+    border: 1px solid #2a2f3e;
+    color: #9ca3af;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.zoom-btn:hover {
+    background: #242936;
+    color: #e5e7eb;
+}
+
+.zoom-level {
+    font-size: 13px;
+    color: #9ca3af;
+    font-weight: 600;
+    min-width: 50px;
+    text-align: center;
+}
+
+/* ============================================
+   TIMELINE CONTENT
+   ============================================ */
+.timeline-content {
+    flex: 1;
+    overflow-x: auto;
+    overflow-y: auto;
+    background: #0a0e17;
+    position: relative;
+}
+
+/* Timecode Ruler */
+.timeline-ruler-container {
+    display: flex;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: #0f1419;
+    border-bottom: 2px solid #667eea;
+}
+
+.track-label-placeholder {
+    width: 140px;
+    flex-shrink: 0;
+    background: #0f1419;
+    border-right: 1px solid #1a1f2e;
+}
+
+.timeline-ruler {
+    flex: 1;
+    height: 40px;
+    position: relative;
+    background: #0f1419;
+    min-width: 800px;
+}
+
+.timecode-marker {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    border-left: 1px solid #2a2f3e;
+    display: flex;
+    padding-left: 4px;
+    padding-top: 4px;
+}
+
+.timecode-marker.major {
+    border-left-color: #667eea;
+}
+
+.timecode-label {
+    font-size: 11px;
+    color: #6b7280;
+    font-weight: 600;
+    font-family: 'Courier New', monospace;
+}
+
+.timecode-marker.major .timecode-label {
+    color: #9ca3af;
+}
+
+/* ============================================
+   TIMELINE TRACKS
+   ============================================ */
+.timeline-track {
+    display: flex;
+    min-height: 80px;
+    border-bottom: 1px solid #1a1f2e;
+    transition: background 0.2s;
+}
+
+.timeline-track:hover {
+    background: rgba(255, 255, 255, 0.01);
+}
+
+.track-label {
+    width: 140px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 16px;
+    background: #0f1419;
+    border-right: 1px solid #1a1f2e;
+}
+
+.track-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+}
+
+.track-icon.video {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+.track-icon.graphics {
+    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    color: white;
+}
+
+.track-icon.audio {
+    background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+    color: white;
+}
+
+.track-icon.text {
+    background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+    color: white;
+}
+
+.track-name {
+    font-size: 13px;
+    font-weight: 700;
+    color: #9ca3af;
+    letter-spacing: 0.5px;
+}
+
+.track-content {
+    flex: 1;
+    position: relative;
+    background:
+        repeating-linear-gradient(
+            90deg,
+            transparent 0,
+            transparent calc(5% - 1px),
+            #1a1f2e calc(5% - 1px),
+            #1a1f2e 5%
+        );
+    min-width: 800px;
+    overflow: visible;
+}
+
+.track-content.drag-over {
+    background-color: rgba(102, 126, 234, 0.1);
+    outline: 2px dashed #667eea;
+    outline-offset: -4px;
+}
+
+/* ============================================
+   TIMELINE ITEMS
+   ============================================ */
+.timeline-item {
+    position: absolute;
+    height: 54px;
+    top: 6px;
+    border-radius: 4px;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    cursor: move;
+    overflow: hidden;
+    transition: box-shadow 0.2s, border-color 0.2s;
+    backdrop-filter: blur(10px);
+}
+
+.timeline-item:hover {
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+    border-color: rgba(255, 255, 255, 0.4);
+    z-index: 10;
+}
+
+.timeline-item.selected {
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.3);
+    z-index: 20;
+}
+
+.timeline-item.dragging {
+    opacity: 0.7;
+    cursor: grabbing;
+    z-index: 30;
+}
+
+/* Item Types */
+.timeline-item[data-type="video"] {
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.9) 0%, rgba(118, 75, 162, 0.9) 100%);
+}
+
+.timeline-item[data-type="graphics"] {
+    background: linear-gradient(135deg, rgba(240, 147, 251, 0.9) 0%, rgba(245, 87, 108, 0.9) 100%);
+}
+
+.timeline-item[data-type="audio"] {
+    background: linear-gradient(135deg, rgba(79, 172, 254, 0.9) 0%, rgba(0, 242, 254, 0.9) 100%);
+}
+
+.timeline-item[data-type="text"] {
+    background: linear-gradient(135deg, rgba(67, 233, 123, 0.9) 0%, rgba(56, 249, 215, 0.9) 100%);
+}
+
+/* Item Content */
+.timeline-item-content {
+    padding: 6px 10px;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    color: white;
+    position: relative;
+}
+
+.item-header {
+    display: flex;
+    align-items: flex-start;
+}
+
+.item-type-icon {
+    display: none;
+}
+
+.item-name {
+    font-size: 12px;
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    width: 100%;
+}
+
+.item-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.item-start-time {
+    font-size: 10px;
+    opacity: 0.8;
+    font-family: 'Courier New', monospace;
+}
+
+.item-duration {
+    font-size: 11px;
+    font-weight: 700;
+    font-family: 'Courier New', monospace;
+    opacity: 0.95;
+}
+
+/* Delete Button */
+.btn-delete-timeline-item {
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    width: 16px;
+    height: 16px;
+    background: rgba(0, 0, 0, 0.6);
+    border: none;
+    border-radius: 2px;
+    color: white;
+    cursor: pointer;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    font-size: 9px;
+    transition: all 0.2s;
+}
+
+.timeline-item:hover .btn-delete-timeline-item {
+    display: flex;
+}
+
+.btn-delete-timeline-item:hover {
+    background: #ef4444;
+    transform: scale(1.1);
+}
+
+/* Resize Handles */
+.resize-handle {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 8px;
+    cursor: ew-resize;
+    background: rgba(255, 255, 255, 0.1);
+    transition: background 0.2s;
+}
+
+.resize-handle-left {
+    left: 0;
+    border-top-left-radius: 4px;
+    border-bottom-left-radius: 4px;
+}
+
+.resize-handle-right {
+    right: 0;
+    border-top-right-radius: 4px;
+    border-bottom-right-radius: 4px;
+}
+
+.resize-handle:hover {
+    background: rgba(255, 255, 255, 0.3);
+}
+
+.timeline-item.resizing .resize-handle {
+    background: rgba(102, 126, 234, 0.6);
+}
+
+/* Overlap Warning */
+.timeline-item.overlapping {
+    border-color: #ef4444;
+    animation: pulse-overlap 1s infinite;
+}
+
+@keyframes pulse-overlap {
+    0%, 100% {
+        box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4);
+        border-color: #ef4444;
+    }
+    50% {
+        box-shadow: 0 0 0 8px rgba(239, 68, 68, 0);
+        border-color: #fca5a5;
+    }
+}
+
+.overlap-indicator {
+    position: absolute;
+    top: -8px;
+    right: 8px;
+    background: #ef4444;
+    color: white;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-size: 10px;
+    font-weight: 700;
+    animation: bounce-indicator 0.5s;
+}
+
+@keyframes bounce-indicator {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-4px); }
+}
+
+/* ============================================
+   TIMELINE FOOTER
+   ============================================ */
+.timeline-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 16px;
+    background: #0f1419;
+    border-top: 1px solid #1a1f2e;
+}
+
+.timeline-stats {
+    display: flex;
+    gap: 24px;
+}
+
+.stat-item {
+    font-size: 13px;
+    color: #6b7280;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.stat-item i {
+    color: #9ca3af;
+}
+
+.stat-item strong {
+    color: #e5e7eb;
+    font-weight: 600;
+}
+
+.timeline-playhead-time {
+    font-size: 14px;
+    color: #667eea;
+    font-weight: 700;
+    font-family: 'Courier New', monospace;
+}
+
+/* ============================================
+   MEDIA LIBRARY DRAGGABLE ITEMS
+   ============================================ */
+.media-item.draggable {
+    cursor: grab;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.media-item.draggable:hover {
+    transform: translateX(4px);
+    box-shadow: 0 2px 8px rgba(102, 126, 234, 0.2);
+}
+
+.media-item.dragging {
+    opacity: 0.5;
+    cursor: grabbing;
+}
+
+/* ============================================
+   RESPONSIVE & SCROLLBARS
+   ============================================ */
+.timeline-content::-webkit-scrollbar {
+    width: 12px;
+    height: 12px;
+}
+
+.timeline-content::-webkit-scrollbar-track {
+    background: #0a0e17;
+}
+
+.timeline-content::-webkit-scrollbar-thumb {
+    background: #2a2f3e;
+    border-radius: 6px;
+    border: 2px solid #0a0e17;
+}
+
+.timeline-content::-webkit-scrollbar-thumb:hover {
+    background: #3a3f4e;
+}
+
+/* ============================================
+   LOADING & EMPTY STATES
+   ============================================ */
+.timeline-empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    color: #6b7280;
+    gap: 16px;
+}
+
+.timeline-empty-state i {
+    font-size: 48px;
+    color: #4b5563;
+}
+
+.timeline-empty-state p {
+    font-size: 14px;
+    text-align: center;
+    max-width: 300px;
+}
+
+/* ============================================
+   ANIMATIONS
+   ============================================ */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.timeline-item {
+    animation: fadeIn 0.2s ease-out;
+}
+
+/* ============================================
+   TOOLTIPS (Optional)
+   ============================================ */
+[title] {
+    position: relative;
+}
+
+/* Smooth transitions for all interactive elements */
+button, .timeline-item, .track-content {
+    transition: all 0.2s ease-out;
+}
+
+/* ============================================
+   DRAG PRECISION INDICATORS
+   ============================================ */
+.timeline-drag-playhead {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: #ef4444;
+    pointer-events: none;
+    z-index: 99999;
+    opacity: 0;
+    transition: opacity 0.1s;
+    box-shadow: 0 0 8px rgba(239, 68, 68, 0.6);
+}
+
+.timeline-drag-playhead.active {
+    opacity: 1;
+}
+
+.timeline-drag-tooltip {
+    position: absolute;
+    top: -35px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #ef4444;
+    color: white;
+    padding: 6px 12px;
+    border-radius: 4px;
+    font-size: 13px;
+    font-weight: 700;
+    font-family: 'Courier New', monospace;
+    white-space: nowrap;
+    pointer-events: none;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    z-index: 100000;
+}
+
+.timeline-drag-tooltip::after {
+    content: '';
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    border: 6px solid transparent;
+    border-top-color: #ef4444;
+}
+
+/* Show tooltip BELOW on VIDEO and GRAPHICS tracks to avoid clipping */
+.timeline-track[data-track="video"] {
+    position: relative;
+    z-index: 1000;
+}
+
+.timeline-track[data-track="video"] .timeline-drag-tooltip {
+    top: auto;
+    bottom: -35px;
+}
+
+.timeline-track[data-track="video"] .timeline-drag-tooltip::after {
+    top: auto;
+    bottom: 100%;
+    border-top-color: transparent;
+    border-bottom-color: #ef4444;
+}
+
+.timeline-track[data-track="graphics"] {
+    position: relative;
+    z-index: 999;
+}
+
+.timeline-track[data-track="graphics"] .timeline-drag-tooltip {
+    top: auto;
+    bottom: -35px;
+}
+
+.timeline-track[data-track="graphics"] .timeline-drag-tooltip::after {
+    top: auto;
+    bottom: 100%;
+    border-top-color: transparent;
+    border-bottom-color: #ef4444;
+}
+
+/* ============================================
+   TIMELINE PLAYBACK SYSTEM
+   ============================================ */
+
+/* Animated Playhead */
+.timeline-playhead {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    width: 2px;
+    pointer-events: none;
+    z-index: 100000;
+    transition: left 0.05s linear;
+}
+
+.timeline-playhead .playhead-line {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    width: 2px;
+    background: #3b82f6;
+    box-shadow: 0 0 10px rgba(59, 130, 246, 0.8);
+}
+
+.timeline-playhead .playhead-handle {
+    position: absolute;
+    top: -6px;
+    left: -6px;
+    width: 14px;
+    height: 14px;
+    background: #3b82f6;
+    border: 2px solid white;
+    border-radius: 50%;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+    cursor: grab;
+    pointer-events: auto;
+}
+
+.timeline-playhead .playhead-handle:active {
+    cursor: grabbing;
+}
+
+/* Transport Controls */
+.timeline-transport {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.transport-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    padding: 6px 10px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    color: var(--text-primary);
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.transport-btn:hover {
+    background: var(--bg-tertiary);
+    border-color: var(--accent);
+    transform: translateY(-1px);
+}
+
+.transport-btn.active {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: white;
+}
+
+.transport-btn i {
+    font-size: 12px;
+}
+
+/* Play button (green) */
+.transport-btn.play {
+    background: #10b981;
+    border-color: #10b981;
+    color: white;
+}
+
+.transport-btn.play:hover {
+    background: #059669;
+    border-color: #059669;
+}
+
+/* Pause button (yellow) */
+.transport-btn.pause {
+    background: #f59e0b;
+    border-color: #f59e0b;
+    color: white;
+}
+
+.transport-btn.pause:hover {
+    background: #d97706;
+    border-color: #d97706;
+}
+
+/* Stop button (red) */
+.transport-btn.stop {
+    background: #ef4444;
+    border-color: #ef4444;
+    color: white;
+}
+
+.transport-btn.stop:hover {
+    background: #dc2626;
+    border-color: #dc2626;
+}
